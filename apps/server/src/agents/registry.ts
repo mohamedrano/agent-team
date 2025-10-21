@@ -8,33 +8,56 @@ import {
   productManagerKasya,
   architectAmira,
   softwareEngineerSalwa,
+  dataAnalystSamra,
   devopsEngineer,
   qaEngineer,
   appsecEngineer,
+  performanceEngineer,
+  uxUiDesigner,
+  promptArchitect,
+  knowledgeCurator,
   apiContractsIntegrator,
+  observabilityMonitor,
+  releaseManager,
+  privacyOfficer,
+  i18nSpecialist,
+  documentationLead,
+  finopsAnalyst,
+  retrievalEvaluator,
+  incidentCommander,
 } from "./builtin.js";
 
 /**
  * Central registry of all available agents in the system
- *
- * Agents are organized by layer:
- * - Orchestration: team_leader_awsa
- * - Strategy: product_manager_kasya
- * - Design: architect_amira
- * - Execution: software_engineer_salwa
- * - Quality: qa_engineer, appsec_engineer
- * - Operations: devops_engineer
- * - Integration: api_contracts_integrator
  */
 export const AGENTS: Agent[] = [
-  // Core agents (always included)
+  // Orchestration & Strategy
   teamLeaderAwsa,
   productManagerKasya,
+  finopsAnalyst,
+  // Design & Experience
   architectAmira,
+  uxUiDesigner,
+  i18nSpecialist,
+  documentationLead,
+  // Execution & Data
   softwareEngineerSalwa,
-  devopsEngineer,
+  dataAnalystSamra,
+  promptArchitect,
+  knowledgeCurator,
+  retrievalEvaluator,
+  // Quality & Security
   qaEngineer,
   appsecEngineer,
+  performanceEngineer,
+  // Operations & Reliability
+  devopsEngineer,
+  observabilityMonitor,
+  releaseManager,
+  incidentCommander,
+  // Governance & Privacy
+  privacyOfficer,
+  // Integration
   apiContractsIntegrator,
 ];
 
@@ -51,11 +74,19 @@ export function getAgent(name: string): Agent | undefined {
 export function getAgentsByLayer(layer: string): Agent[] {
   const layerMap: Record<string, string[]> = {
     orchestration: ["team_leader_awsa"],
-    strategy: ["product_manager_kasya"],
-    design: ["architect_amira"],
-    execution: ["software_engineer_salwa"],
-    quality: ["qa_engineer", "appsec_engineer"],
-    operations: ["devops_engineer"],
+    strategy: ["product_manager_kasya", "finops_analyst"],
+    design: ["architect_amira", "ux_ui_designer"],
+    experience: ["i18n_specialist", "documentation_lead"],
+    execution: ["software_engineer_salwa", "data_analyst_samra", "prompt_architect"],
+    data: ["knowledge_curator", "retrieval_evaluator"],
+    quality: ["qa_engineer", "appsec_engineer", "performance_engineer"],
+    operations: [
+      "devops_engineer",
+      "observability_monitor",
+      "release_manager",
+      "incident_commander",
+    ],
+    governance: ["privacy_officer", "finops_analyst"],
     integration: ["api_contracts_integrator"],
   };
 
@@ -67,27 +98,56 @@ export function getAgentsByLayer(layer: string): Agent[] {
  * Get required agents for a project type
  */
 export function getRequiredAgents(
-  projectType: "full_stack_web" | "api_microservice" | "data_analytics" | "mobile_app"
+  projectType: "full_stack_web" | "api_microservice" | "data_analytics" | "mobile_app",
 ): Agent[] {
   const baseAgents = [
     "team_leader_awsa",
     "product_manager_kasya",
     "architect_amira",
+    "software_engineer_salwa",
     "devops_engineer",
     "qa_engineer",
     "appsec_engineer",
+    "performance_engineer",
+    "observability_monitor",
+    "release_manager",
+    "privacy_officer",
+    "documentation_lead",
+    "incident_commander",
+    "finops_analyst",
+    "prompt_architect",
   ];
 
   const typeSpecificAgents: Record<string, string[]> = {
-    full_stack_web: ["software_engineer_salwa", "api_contracts_integrator"],
-    api_microservice: ["software_engineer_salwa", "api_contracts_integrator"],
-    data_analytics: ["software_engineer_salwa"],
-    mobile_app: ["software_engineer_salwa"],
+    full_stack_web: [
+      "ux_ui_designer",
+      "api_contracts_integrator",
+      "i18n_specialist",
+      "data_analyst_samra",
+    ],
+    api_microservice: [
+      "api_contracts_integrator",
+      "data_analyst_samra",
+      "knowledge_curator",
+    ],
+    data_analytics: [
+      "data_analyst_samra",
+      "knowledge_curator",
+      "retrieval_evaluator",
+      "finops_analyst",
+    ],
+    mobile_app: [
+      "ux_ui_designer",
+      "i18n_specialist",
+      "api_contracts_integrator",
+    ],
   };
 
   const requiredNames = [
-    ...baseAgents,
-    ...(typeSpecificAgents[projectType] || []),
+    ...new Set([
+      ...baseAgents,
+      ...(typeSpecificAgents[projectType] || []),
+    ]),
   ];
 
   return AGENTS.filter((agent) => requiredNames.includes(agent.name));
@@ -106,10 +166,23 @@ export function validateAgentRegistry(): {
     "product_manager_kasya",
     "architect_amira",
     "software_engineer_salwa",
+    "data_analyst_samra",
     "devops_engineer",
     "qa_engineer",
     "appsec_engineer",
+    "performance_engineer",
+    "ux_ui_designer",
+    "prompt_architect",
+    "knowledge_curator",
     "api_contracts_integrator",
+    "observability_monitor",
+    "release_manager",
+    "privacy_officer",
+    "i18n_specialist",
+    "documentation_lead",
+    "finops_analyst",
+    "retrieval_evaluator",
+    "incident_commander",
   ];
 
   const registeredNames = AGENTS.map((a) => a.name);
