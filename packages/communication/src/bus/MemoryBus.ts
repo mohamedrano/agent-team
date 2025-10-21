@@ -4,7 +4,7 @@ import { MessageEnvelopeSchema, type MessageEnvelope } from "../schemas.js";
 export class MemoryBus implements MessageBus {
   private subs = new Map<string, Array<{h: Handler; f?: (m: MessageEnvelope)=>boolean}>>();
   async publish(msg: MessageEnvelope): Promise<void> {
-    const envelope = MessageEnvelopeSchema.parse(msg);
+    const envelope = MessageEnvelopeSchema.parse(msg) as MessageEnvelope;
     const topic = envelope.topic ?? "*";
     const targets = [
       ...(this.subs.get(topic) ?? []),

@@ -35,7 +35,7 @@ export class Router {
     if (!parsed.success) {
       return;
     }
-    const msg = parsed.data;
+    const msg = parsed.data as MessageEnvelope;
 
     const { idempotency, signing } = this.options;
     if (signing) {
@@ -65,7 +65,6 @@ export class Router {
       }
     }
 
-    const { idempotency } = this.options;
     if (idempotency && msg.qos !== "at-most-once") {
       const ttl = Math.max(1, idempotency.ttlSeconds ?? 86_400);
       const alreadySeen = await idempotency.store.seen(msg.id);

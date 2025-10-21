@@ -45,11 +45,12 @@ export async function createCommunicationLayer(): Promise<CommunicationLayer> {
   const teardowns: Teardown[] = [];
 
   let bus: MessageBus;
-  let store = new MemoryIdemStore();
+  let store: MemoryIdemStore | RedisIdemStore = new MemoryIdemStore();
 
   if (provider === "redis" && process.env.REDIS_URL) {
     try {
       bus = new RedisBus({ url: process.env.REDIS_URL });
+      // @ts-expect-error ioredis is a peer dependency loaded dynamically
       const redisModule = await import("ioredis");
       const redis = new redisModule.default(process.env.REDIS_URL);
       store = new RedisIdemStore(redis as any);

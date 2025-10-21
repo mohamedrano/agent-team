@@ -41,7 +41,11 @@ export interface RedisBusOptions {
 
 type SubscriptionEntry = { handler: Handler; filter?: SubscribeOptions["filter"] };
 
-type RedisModule = typeof import("ioredis");
+type RedisConstructor = {
+  new (url: string, options?: any): RedisLike;
+  new (options?: any): RedisLike;
+};
+type RedisModule = { default: RedisConstructor };
 
 export class RedisBus implements MessageBus {
   private publisher?: RedisLike;
@@ -62,7 +66,7 @@ export class RedisBus implements MessageBus {
   }
 
   async publish(msg: MessageEnvelope): Promise<void> {
-    const envelope = MessageEnvelopeSchema.parse(msg);
+    const envelope = MessageEnvelopeSchema.parse(msg) as MessageEnvelope;
     await this.ensureClients();
     const channel = this.channel(envelope.topic ?? "*");
     const payload = JSON.stringify(envelope);
@@ -144,7 +148,7 @@ export class RedisBus implements MessageBus {
     }
     try {
       const parsed = JSON.parse(payload);
-      const envelope = MessageEnvelopeSchema.parse(parsed);
+      const envelope = MessageEnvelopeSchema.parse(parsed) as MessageEnvelope;
       const started = performance.now();
       await Promise.all(
         entries.map(async ({ handler, filter }) => {
@@ -180,13 +184,14 @@ export class RedisBus implements MessageBus {
       const delay = Math.min(this.maxDelay, this.baseDelay * 2 ** times);
       return delay;
     };
+    const RedisClass = redis.default;
     const client = this.options.url
-      ? new redis(this.options.url, {
+      ? new RedisClass(this.options.url, {
           lazyConnect: false,
           maxRetriesPerRequest: null,
           retryStrategy,
         })
-      : new redis({
+      : new RedisClass({
           lazyConnect: false,
           maxRetriesPerRequest: null,
           retryStrategy,
@@ -196,7 +201,7 @@ export class RedisBus implements MessageBus {
 
   private async loadRedis(): Promise<RedisModule> {
     if (this.options.publisher || this.options.subscriber) {
-      return (await import("ioredis")) as RedisModule;
+      return await import("ioredis") as RedisModule;
     }
     const url = this.options.url ?? process.env.REDIS_URL;
     if (!url) {
