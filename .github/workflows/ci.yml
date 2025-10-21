@@ -22,4 +22,4 @@ jobs:
       - name: typecheck
         run: pnpm -w run typecheck
       - name: test
-        run: pnpm -w run test -- --coverage
+        run: pnpm run test:ci
