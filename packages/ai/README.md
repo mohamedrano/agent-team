@@ -4,7 +4,7 @@ AI integration package for Agent Team platform with Google Gemini support, tool 
 
 ## Features
 
-- **Google Gemini Integration**: Full support for Gemini 2.0 Flash and 1.5 Pro models
+- **Google Gemini Integration**: Full support for gemini-2.5-pro and 1.5 models
 - **Rate Limiting**: Token bucket rate limiter for API quota management
 - **Tool Calling**: Define and execute tools with Zod schema validation
 - **Model Router**: Automatic model selection based on task requirements
@@ -24,7 +24,7 @@ Set environment variables:
 
 ```bash
 GEMINI_API_KEY=your_api_key_here
-AI_MODEL_DEFAULT=gemini-2.0-flash-exp
+AI_MODEL_DEFAULT=gemini-2.5-pro
 AI_TEMPERATURE=0.2
 AI_MAX_TOKENS=4096
 AI_RATE_QPS=3

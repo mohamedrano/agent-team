@@ -34,7 +34,7 @@ AGENT_BUS_PROVIDER=memory
 
 # AI
 GEMINI_API_KEY=your_api_key_here
-AI_MODEL_DEFAULT=gemini-2.0-flash-exp
+AI_MODEL_DEFAULT=gemini-2.5-pro
 AI_TEMPERATURE=0.2
 
 # Orchestration
@@ -229,7 +229,7 @@ apps/server/
 | `HOST` | Server host | `0.0.0.0` |
 | `NODE_ENV` | Environment | `development` |
 | `GEMINI_API_KEY` | Google Gemini API key | - |
-| `AI_MODEL_DEFAULT` | Default AI model | `gemini-2.0-flash-exp` |
+| `AI_MODEL_DEFAULT` | Default AI model | `gemini-2.5-pro` |
 | `AI_TEMPERATURE` | Generation temperature | `0.2` |
 | `AI_MAX_TOKENS` | Max output tokens | `4096` |
 | `AI_RATE_QPS` | Rate limit (queries/sec) | `3` |
