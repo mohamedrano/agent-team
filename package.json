@@ -1,0 +1,51 @@
+{
+  "name": "agent-team-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Multi-Agent System for Software Development Automation - Enterprise SDLC Platform",
+  "author": "Agent Team Contributors",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.1.0",
+  "scripts": {
+    "dev": "tsx apps/server/src/main.ts",
+    "build": "tsc -p .",
+    "start": "node dist/apps/server/src/main.js",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest watch",
+    "test:ui": "vitest --ui",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc -p . --noEmit",
+    "smoke": "tsx apps/ops/smoke.ts",
+    "clean": "rm -rf dist coverage node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\""
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "@typescript-eslint/eslint-plugin": "^8.8.1",
+    "@typescript-eslint/parser": "^8.8.1",
+    "@vitest/coverage-v8": "^2.1.3",
+    "@vitest/ui": "^2.1.3",
+    "eslint": "^9.11.1",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.3",
+    "zod": "^3.23.8"
+  },
+  "dependencies": {
+    "fastify": "^4.28.1",
+    "node-fetch": "^3.3.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "typescript": "^5.6.3"
+    }
+  }
+}
