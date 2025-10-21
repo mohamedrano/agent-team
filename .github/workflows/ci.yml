@@ -1,0 +1,25 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - name: bootstrap pnpm
+        run: bash ./scripts/pnpm-bootstrap.sh
+      - name: install
+        run: pnpm install --frozen-lockfile
+      - name: build
+        run: pnpm -w run build
+      - name: lint
+        run: pnpm -w run lint
+      - name: typecheck
+        run: pnpm -w run typecheck
+      - name: test
+        run: pnpm -w run test -- --coverage

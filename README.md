@@ -82,12 +82,12 @@
 ### Prerequisites / المتطلبات
 
 ```bash
-# Node.js 20+ required
-node --version  # v20.11.0+
+# Node.js 18.18+ required
+node --version  # v18.18.0+
 
-# pnpm 9+ required
+# pnpm 9.12.3 recommended
 corepack enable
-corepack prepare pnpm@9 --activate
+corepack prepare pnpm@9.12.3 --activate
 ```
 
 ### Installation / التثبيت
@@ -97,14 +97,26 @@ corepack prepare pnpm@9 --activate
 git clone https://github.com/your-org/agent-team.git
 cd agent-team
 
-# 2. Install dependencies
-pnpm install
+# 2. Bootstrap pinned pnpm (handles Corepack or registry blocks)
+pnpm run bootstrap
 
-# 3. Setup environment variables
+# 3. Install dependencies
+pnpm i
+
+# 4. Build all workspace packages
+pnpm -w run build
+
+# 5. Run test suite with coverage
+pnpm -w run test
+
+# 6. Demo inter-agent communication example
+pnpm run demo:comm
+
+# 7. Setup environment variables
 cp .env.example .env
 # Edit .env with your configuration
 
-# 4. Run in development mode
+# 8. Run in development mode
 pnpm dev
 ```
 

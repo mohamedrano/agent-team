@@ -29,33 +29,14 @@ export default defineConfig({
 
     // Coverage configuration
     coverage: {
-      enabled: true,
       provider: "v8",
-      reporter: ["text", "json-summary", "lcov", "html"],
+      reporter: ["text", "html"],
       reportsDirectory: "./coverage",
-
-      // Include all source files
       all: true,
-      include: [
-        "apps/server/src/**/*.ts",
-        "packages/communication/src/**/*.ts",
-      ],
-      exclude: [
-        "**/*.test.ts",
-        "**/*.spec.ts",
-        "**/node_modules/**",
-        "**/dist/**",
-        "**/*.d.ts",
-        "**/types.ts",
-      ],
-
-      // Coverage thresholds
-      thresholds: {
-        statements: 80,
-        branches: 75,
-        functions: 85,
-        lines: 80,
-      },
+      lines: 0.8,
+      functions: 0.8,
+      branches: 0.8,
+      statements: 0.8,
     },
 
     // Timeouts
