@@ -22,6 +22,7 @@
     "build": "tsc -p .",
     "start": "node dist/apps/server/src/main.js",
     "test": "vitest run --coverage",
+    "test:ci": "pnpm -w -r exec vitest --run --coverage",
     "test:watch": "vitest watch",
     "test:ui": "vitest --ui",
     "lint": "eslint .",
