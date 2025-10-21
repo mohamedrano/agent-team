@@ -85,7 +85,7 @@ export class GcpPubSubBus implements MessageBus {
   }
 
   async publish(msg: MessageEnvelope): Promise<void> {
-    const envelope = MessageEnvelopeSchema.parse(msg);
+    const envelope = MessageEnvelopeSchema.parse(msg) as MessageEnvelope;
     await this.ensureClient();
     const topicName = this.topicName(envelope.topic ?? "*");
     const topic = this.pubsub!.topic(topicName);
@@ -109,7 +109,7 @@ export class GcpPubSubBus implements MessageBus {
         try {
           const payload = message.data.toString();
           const parsed = JSON.parse(payload);
-          const envelope = MessageEnvelopeSchema.parse(parsed);
+          const envelope = MessageEnvelopeSchema.parse(parsed) as MessageEnvelope;
           const started = performance.now();
           await Promise.all(
             (this.handlers.get(key) ?? []).map(async ({ handler: h, filter }) => {

@@ -100,7 +100,7 @@ async function testHealthCheck(config: SmokeTestConfig): Promise<TestResult> {
       };
     }
 
-    const body = await response.json();
+    const body = await response.json() as any;
 
     if (body.status !== "healthy") {
       return {
@@ -154,7 +154,7 @@ async function testReadinessCheck(
       };
     }
 
-    const body = await response.json();
+    const body = await response.json() as any;
 
     if (!body.ready) {
       return {
@@ -206,7 +206,7 @@ async function testAgentRegistry(config: SmokeTestConfig): Promise<TestResult> {
       };
     }
 
-    const body = await response.json();
+    const body = await response.json() as any;
 
     if (!body.data || !body.data.agents || body.data.agents.length === 0) {
       return {
@@ -362,7 +362,7 @@ async function testErrorHandling(config: SmokeTestConfig): Promise<TestResult> {
       };
     }
 
-    const body = await response.json();
+    const body = await response.json() as any;
 
     if (!body.error) {
       return {

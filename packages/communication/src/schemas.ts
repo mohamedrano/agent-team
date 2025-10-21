@@ -7,8 +7,13 @@ export const MessageEnvelopeSchema = z.object({
   topic: z.string().optional(),
   from: z.string().min(1),
   to: z.union([z.string(), z.array(z.string())]).optional(),
-  payload: z.unknown(),
+  payload: z.any(),
   meta: z.record(z.unknown()).optional(),
   sig: z.string().optional()
 });
-export type MessageEnvelope = z.infer<typeof MessageEnvelopeSchema>;
+
+// Base type from Zod schema
+type MessageEnvelopeBase = z.infer<typeof MessageEnvelopeSchema>;
+
+// Generic version for type-safe payloads
+export type MessageEnvelope<P = unknown> = Omit<MessageEnvelopeBase, 'payload'> & { payload: P };

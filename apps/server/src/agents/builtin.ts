@@ -1418,7 +1418,7 @@ export const runContractTests: AgentTool<
     failures: [
       {
         endpoint: "POST /api/projects",
-        issue: "422 response schema missing "errors" array",
+        issue: "422 response schema missing \"errors\" array",
         severity: "medium",
         remediation: "Align handler response with OpenAPI schema and regenerate types",
       },
