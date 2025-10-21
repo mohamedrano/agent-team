@@ -26,6 +26,21 @@ async function start() {
   });
   app.log.info("Communication layer initialized");
 
+  // Initialize orchestration layer if enabled
+  if (process.env.ORCH_ENABLED !== "false") {
+    try {
+      const { bootstrap } = await import("./orchestration.boot.js");
+      const { adapter, orchestrator } = await bootstrap();
+      (app as any).orchestration = { adapter, orchestrator };
+      app.addHook("onClose", async () => {
+        const { shutdown } = await import("./orchestration.boot.js");
+        await shutdown();
+      });
+    } catch (err) {
+      app.log.warn(err, "Failed to initialize orchestration layer");
+    }
+  }
+
   try {
     // Validate configuration
     if (isNaN(config.port) || config.port < 1 || config.port > 65535) {
