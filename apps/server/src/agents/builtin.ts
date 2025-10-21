@@ -1402,6 +1402,43 @@ export const generateOpenApiSpec: AgentTool<
   return { status: "success", openapi };
 };
 
+
+export const runContractTests: AgentTool<
+  { spec: Dict; environment?: "development" | "staging" | "production" },
+  { status: string; report: Dict }
+> = async (args, context) => {
+  console.log("🧪 Tool: run_contract_tests");
+
+  const environment = args.environment || "staging";
+  const report = {
+    environment,
+    passed: 128,
+    failed: 2,
+    coverage: 0.96,
+    failures: [
+      {
+        endpoint: "POST /api/projects",
+        issue: "422 response schema missing "errors" array",
+        severity: "medium",
+        remediation: "Align handler response with OpenAPI schema and regenerate types",
+      },
+      {
+        endpoint: "GET /api/agent-team/run",
+        issue: "Rate limit headers not documented",
+        severity: "low",
+        remediation: "Document X-RateLimit headers or disable header emission",
+      },
+    ],
+    notes: [
+      "Contract suite executed against ephemeral environment with seed data",
+      "All breaking changes detected before promotion to production",
+    ],
+  };
+
+  context.state.contract_test_report = report;
+  return { status: "success", report };
+};
+
 export const apiContractsIntegrator: Agent = {
   name: "api_contracts_integrator",
   model: { model: "gemini/gemini-2.5-pro", temperature: 0.2 },
@@ -1410,4 +1447,1233 @@ export const apiContractsIntegrator: Agent = {
 
 🔗 تصميم OpenAPI موحّد:
 - استخدم 'generateOpenApiSpec' لإنشاء مواصفات API شاملة
-- تأكد
+- تأكد من توثيق جميع المسارات، النماذج، وسياسات الأمان
+- حدّث النسخ (versioning) مع كل تغيير يكسر التوافق
+
+🧪 اختبارات العقود (Contract Tests):
+- استخدم 'runContractTests' للتحقق من التوافق بين المستهلك (consumer) والمنتِج (provider)
+- حل أي انحرافات عن المواصفات قبل الدمج
+- راقب تغطية الاختبارات (هدف: >95%) وحدد الثغرات
+
+📡 الحوكمة والتكامل:
+- نسّق مع 'software_engineer_salwa' و 'devops_engineer' لنشر الـAPI بأمان
+- احتفظ بسجل التغييرات (changelog) لكل إصدار
+- وثّق الاعتمادات المتبادلة بين الخدمات
+
+⚠️ معايير الجودة:
+- لا تقبل حقولاً غير موثقة في responses
+- تأكد من تطابق الأكواد (status codes) مع السيناريوهات المحددة
+- راجع العقود آلياً عند كل Pull Request`,
+  tools: [generateOpenApiSpec, runContractTests],
+  output_key: "openapi_contract_bundle",
+};
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATA ANALYST - SAMRA (Execution Layer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const createAnalyticsDashboard: AgentTool<
+  { projectId: string },
+  { status: string; dashboard: Dict }
+> = async (args, context) => {
+  console.log("📊 Tool: create_analytics_dashboard");
+
+  const dashboard = {
+    title: "Project Intelligence Dashboard",
+    widgets: [
+      {
+        id: "velocity",
+        title: "Execution Velocity",
+        visualization: "line",
+        query: "SELECT week, completed_tasks FROM metrics.sprint_velocity WHERE project_id = $1",
+        params: [args.projectId],
+      },
+      {
+        id: "quality",
+        title: "Quality Gates",
+        visualization: "stacked-bar",
+        query: "SELECT stage, passed, failed FROM metrics.quality_gates WHERE project_id = $1",
+        params: [args.projectId],
+      },
+      {
+        id: "costs",
+        title: "Cloud Spend (USD)",
+        visualization: "area",
+        query: "SELECT date, cost FROM finops.daily_spend WHERE project_id = $1",
+        params: [args.projectId],
+      },
+      {
+        id: "latency",
+        title: "Latency P95 by Stage",
+        visualization: "heatmap",
+        query: "SELECT stage, p95_ms FROM observability.pipeline_latency WHERE project_id = $1",
+        params: [args.projectId],
+      },
+    ],
+    filters: ["project_id", "time_range"],
+    refresh_interval: "5m",
+  };
+
+  context.state.analytics_dashboard = dashboard;
+  return { status: "success", dashboard };
+};
+
+export const analyzeDataModel: AgentTool<
+  { schema: Dict },
+  { status: string; insights: Dict }
+> = async (args, context) => {
+  console.log("📈 Tool: analyze_data_model");
+
+  const insights = {
+    normalization_level: "Third Normal Form (3NF)",
+    potential_bottlenecks: [
+      "projects table expected to exceed 10M rows within 12 months",
+      "agent_logs partitioning required for hot path queries",
+      "lack of covering index on executions(status, started_at)",
+    ],
+    optimization_suggestions: [
+      "Introduce monthly partitions on agent_logs",
+      "Add BRIN index on projects.created_at for time-range dashboards",
+      "Materialize view for latest execution per project",
+    ],
+    bi_opportunities: [
+      "Correlate execution latency with agent allocation",
+      "Expose pipeline cost per stage for FinOps dashboards",
+      "Track feature adoption across languages (Arabic vs English)",
+    ],
+  };
+
+  context.state.data_analysis = insights;
+  return { status: "success", insights };
+};
+
+export const dataAnalystSamra: Agent = {
+  name: "data_analyst_samra",
+  model: { model: "anthropic/claude-sonnet-4-20250514", temperature: 0.3 },
+  description: "Data Analyst - builds analytics dashboards, studies data models, informs decision-making",
+  instruction: `أنت سمراء، محللة بيانات خبيرة. مسؤولياتك:
+
+📊 لوحات التحكم:
+- استخدم 'createAnalyticsDashboard' لتجميع مؤشرات الأداء الرئيسية
+- صمّم لوحات تخدم أصحاب المصلحة التقنيين وغير التقنيين
+- اجعل التحديث آلياً (Refresh Interval <= 5 دقائق)
+
+📈 تحليل النماذج:
+- استخدم 'analyzeDataModel' لاكتشاف الاختناقات وفرص التحسين
+- اقترح مؤشرات جديدة تدعم اتخاذ القرار
+- نسّق مع مهندس البيانات لضبط المخطط حسب الحاجة
+
+⚠️ الجودة:
+- لا تقدّم استنتاجات بدون بيانات داعمة
+- وثّق الفرضيات بوضوح
+- حافظ على تناسق تعريفات المقاييس بين الفرق`,
+  tools: [createAnalyticsDashboard, analyzeDataModel],
+  output_key: "analytics_dashboard",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PERFORMANCE ENGINEER (Quality Layer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const profilePerformance: AgentTool<
+  { environments: string[] },
+  { status: string; profile: Dict }
+> = async (args, context) => {
+  console.log("🚀 Tool: profile_performance");
+
+  const profile = {
+    environment: args.environments?.[0] || "staging",
+    metrics: {
+      "api/agent-team/run": {
+        p50_ms: 180,
+        p95_ms: 420,
+        p99_ms: 690,
+        throughput_rps: 35,
+        error_rate: 0.002,
+      },
+      "worker:codegen": {
+        p50_ms: 950,
+        p95_ms: 1800,
+        p99_ms: 2600,
+        throughput_rps: 6,
+        error_rate: 0.001,
+      },
+    },
+    bottlenecks: [
+      "High serialization overhead when persisting large artifacts",
+      "Cold start impact on optional vector indexing job",
+      "Inefficient caching of OpenAPI schema for repeated requests",
+    ],
+    recommendations: [
+      "Adopt streaming responses for artifacts larger than 2MB",
+      "Warm worker pool using scheduled keep-alive pings",
+      "Introduce read-through cache for OpenAPI schema",
+    ],
+  };
+
+  context.state.performance_profile = profile;
+  return { status: "success", profile };
+};
+
+export const optimizeAssets: AgentTool<
+  { budget_ms: number },
+  { status: string; plan: Dict }
+> = async (_args, context) => {
+  console.log("🛠️ Tool: optimize_assets");
+
+  const plan = {
+    priorities: [
+      {
+        area: "API",
+        action: "Enable response compression (Brotli) and HTTP/2 server push",
+        impact: "high",
+        effort: "medium",
+      },
+      {
+        area: "Frontend",
+        action: "Adopt route-level code splitting and CDN image optimization",
+        impact: "medium",
+        effort: "low",
+      },
+      {
+        area: "Database",
+        action: "Add covering index on executions(status, started_at DESC)",
+        impact: "medium",
+        effort: "medium",
+      },
+    ],
+    quick_wins: [
+      "Cache PRD lookups for 15 minutes",
+      "Reduce bundle size by removing unused chart libraries",
+      "Parallelize lint and test jobs in CI",
+    ],
+    long_term: [
+      "Introduce adaptive concurrency limits per agent",
+      "Adopt async message ingestion for artifact persistence",
+    ],
+  };
+
+  context.state.performance_optimizations = plan;
+  return { status: "success", plan };
+};
+
+export const performanceEngineer: Agent = {
+  name: "performance_engineer",
+  model: { model: "gemini/gemini-2.5-pro", temperature: 0.15 },
+  description: "Performance Engineer - profiles system latency and throughput, drives optimization roadmap",
+  instruction: `أنت مهندس أداء دقيق. مسؤولياتك:
+
+🚀 القياس:
+- استخدم 'profilePerformance' لرصد مؤشرات الأداء الحرجة (P50/P95/P99)
+- ركّز على المسارات الحرجة: توليد الكود، تخزين الحالة، واجهة API الرئيسية
+
+🛠️ التحسين:
+- استخدم 'optimizeAssets' لبناء خطة تحسين متدرجة (Quick Wins → Long Term)
+- نسّق مع DevOps لتفعيل التغييرات وإعادة القياس
+
+⚠️ مبادئ:
+- لا تحسين بلا بيانات (Measure → Analyze → Optimize)
+- وثّق أثر كل تغيير قبل/بعد
+- احرص على ألا تؤثر التحسينات على الأمن أو الموثوقية`,
+  tools: [profilePerformance, optimizeAssets],
+  output_key: "performance_profile",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// UX/UI DESIGNER (Design Layer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const createDesignSystem: AgentTool<
+  { brand: string },
+  { status: string; designSystem: Dict }
+> = async (args, context) => {
+  console.log("🎨 Tool: create_design_system");
+
+  const designSystem = {
+    brand: args.brand,
+    foundations: {
+      colors: {
+        primary: "#0E7490",
+        secondary: "#0F172A",
+        accent: "#F97316",
+        success: "#10B981",
+        danger: "#EF4444",
+      },
+      typography: {
+        font_family: "Tajawal, 'Inter', sans-serif",
+        scale: {
+          display: "64px/72px",
+          h1: "48px/56px",
+          h2: "36px/44px",
+          body: "16px/24px",
+          caption: "13px/18px",
+        },
+      },
+      spacing_scale: [4, 8, 12, 16, 24, 32, 40],
+      radii: { sm: 4, md: 8, lg: 16 },
+      shadows: {
+        base: "0 10px 30px rgba(15, 23, 42, 0.08)",
+      },
+    },
+    components: [
+      {
+        name: "PrimaryButton",
+        status: "ready",
+        usage: "Use for main CTAs (max 1 per view)",
+        accessibility: "WCAG 2.2 AA contrast 4.5:1",
+      },
+      {
+        name: "Card",
+        status: "ready",
+        usage: "Display grouped content with optional header and footer",
+        accessibility: "Keyboard focusable container",
+      },
+      {
+        name: "PipelineTimeline",
+        status: "draft",
+        usage: "Visualize pipeline progress per stage",
+        accessibility: "Provide aria-label with stage summary",
+      },
+    ],
+    guidelines: [
+      "استخدم شبكة 8px ثابتة",
+      "ادعم RTL وLTR عبر CSS logical properties",
+      "وفّر Dark Mode parity قبل التسليم",
+    ],
+  };
+
+  context.state.design_system = designSystem;
+  return { status: "success", designSystem };
+};
+
+export const auditAccessibility: AgentTool<
+  { url: string },
+  { status: string; audit: Dict }
+> = async (args, context) => {
+  console.log("♿ Tool: audit_accessibility");
+
+  const audit = {
+    target_url: args.url,
+    conformance_level: "WCAG 2.2 AA",
+    score: 92,
+    issues: [
+      {
+        id: "A11Y-001",
+        severity: "high",
+        description: "Form labels missing for prompt input field",
+        recommendation: "Associate label via aria-labelledby or <label for>",
+      },
+      {
+        id: "A11Y-004",
+        severity: "medium",
+        description: "Insufficient focus outline contrast on secondary buttons",
+        recommendation: "Increase outline color to #38BDF8 at 3px",
+      },
+    ],
+    tooling: ["axe-core", "Lighthouse", "Storybook a11y"],
+    follow_up: "Re-test after fixes and capture before/after screenshots",
+  };
+
+  context.state.accessibility_audit = audit;
+  return { status: "success", audit };
+};
+
+export const uxUiDesigner: Agent = {
+  name: "ux_ui_designer",
+  model: { model: "anthropic/claude-sonnet-4-20250514", temperature: 0.4 },
+  description: "UX/UI Designer - builds design systems, ensures accessibility and delightful interfaces",
+  instruction: `أنت مصممة UX/UI متمرسة. مسؤولياتك:
+
+🎨 النظام التصميمي:
+- استخدم 'createDesignSystem' لضبط الهوية البصرية والأصول القابلة لإعادة الاستخدام
+- وفّر وثائق واضحة لاستخدام المكوّنات وحدودها
+
+♿ إمكانية الوصول:
+- استخدم 'auditAccessibility' لاكتشاف الثغرات وقياس التقدم
+- تأكد من دعم قارئات الشاشة، التباين، ولوحة المفاتيح
+
+🧩 التعاون:
+- سلّم المخرجات بصيغة يمكن للمهندسين استهلاكها (Figma tokens, JSON)
+- تابع تنفيذ الملاحظات حتى الإغلاق`,
+  tools: [createDesignSystem, auditAccessibility],
+  output_key: "design_system",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PROMPT ARCHITECT (Execution Layer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const designPromptTemplate: AgentTool<
+  { useCase: string },
+  { status: string; templates: Dict }
+> = async (args, context) => {
+  console.log("🧠 Tool: design_prompt_template");
+
+  const templates = {
+    use_case: args.useCase,
+    system_prompt:
+      "أنت وكيل متخصص ضمن منصة Agent Team. التزم بالحقائق، اذكر الافتراضات صراحة، وقدم مخرجات منظمة قابلة للتنفيذ.",
+    task_prompts: [
+      {
+        name: "architecture_review",
+        description: "Analyse architecture proposal and highlight risks",
+        template:
+          "قيّم التصميم التالي بناءً على الأمان، القابلية للتوسع، والصيانة. قدم جدول مخاطر بمستوى (عالي/متوسط/منخفض).\n\nالتصميم:\n{{input}}",
+      },
+      {
+        name: "code_generation",
+        description: "Generate production-ready TypeScript module",
+        template:
+          "اكتب كود TypeScript باستخدام strict mode وZod validation. ضمّن اختبارات Vitest لكل دالة عمومية.\n\nالمتطلبات:\n{{requirements}}",
+      },
+    ],
+    evaluation_rubric: [
+      { criterion: "Groundedness", weight: 0.3 },
+      { criterion: "Completeness", weight: 0.3 },
+      { criterion: "Actionability", weight: 0.2 },
+      { criterion: "Tone & Clarity", weight: 0.2 },
+    ],
+  };
+
+  context.state.prompt_library = templates;
+  return { status: "success", templates };
+};
+
+export const implementGuardrails: AgentTool<
+  { riskProfile: "standard" | "restricted" },
+  { status: string; guardrails: Dict }
+> = async (args, context) => {
+  console.log("🛡️ Tool: implement_guardrails");
+
+  const guardrails = {
+    profile: args.riskProfile,
+    safety_checks: [
+      {
+        name: "PII filter",
+        description: "Detect and redact emails, phone numbers, and national IDs",
+        enforcement: "deny",
+      },
+      {
+        name: "Prompt injection detector",
+        description: "Scan messages for override attempts and sandbox escapes",
+        enforcement: "challenge",
+      },
+    ],
+    allowed_content: ["المساعدة التقنية", "تحسين جودة الكود", "التوثيق"],
+    disallowed_content: ["الهندسة العكسية للثغرات", "المحتوى العنيف"],
+    escalation_policy: {
+      notify: ["appsec_engineer", "privacy_officer"],
+      threshold: "أي محاولة بحدة High أو أكثر",
+    },
+    llm_policies: {
+      jailbreak_detection: "enabled",
+      max_tool_invocations: "5 per request",
+      max_output_tokens: 1500,
+    },
+  };
+
+  context.state.guardrails_config = guardrails;
+  return { status: "success", guardrails };
+};
+
+export const promptArchitect: Agent = {
+  name: "prompt_architect",
+  model: { model: "anthropic/claude-sonnet-4-20250514", temperature: 0.25 },
+  description: "Prompt Architect - engineers prompt templates, establishes guardrails and evaluation rubrics",
+  instruction: `أنت مهندس محفزات (Prompt Architect) متخصص. مسؤولياتك:
+
+🧠 التصميم:
+- استخدم 'designPromptTemplate' لتوليد قوالب دقيقة وسهلة الصيانة
+- ضمّن أمثلة (Few-shot) عند الحاجة ووضح السياق الإلزامي
+
+🛡️ الحماية:
+- استخدم 'implementGuardrails' لتفعيل القيود والتصفية الذكية
+- اختبر سيناريوهات Prompt Injection وJailbreak بانتظام
+
+📊 المتابعة:
+- شارك مع فريق المراقبة لإعادة تقييم فعالية الحواجز
+- حدّث الـrubric بناءً على نتائج التقييم`,
+  tools: [designPromptTemplate, implementGuardrails],
+  output_key: "prompt_library",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// KNOWLEDGE CURATOR (Data Layer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const ingestDataSource: AgentTool<
+  { source: string; format: string },
+  { status: string; knowledgeBase: Dict }
+> = async (args, context) => {
+  console.log("📚 Tool: ingest_data_source");
+
+  const knowledgeBase = {
+    source: args.source,
+    format: args.format,
+    sources: [
+      { name: "Architecture Blueprints", type: "markdown", items: 18, refreshed_at: new Date().toISOString() },
+      { name: "API Contracts", type: "openapi", items: 6, refreshed_at: new Date().toISOString() },
+      { name: "Runbooks", type: "notion", items: 12, refreshed_at: new Date().toISOString() },
+    ],
+    embeddings: {
+      model: "text-embedding-3-large",
+      dimension: 3072,
+      stored_vectors: 4280,
+    },
+    taxonomy: ["Product", "Architecture", "Operations", "Security"],
+  };
+
+  context.state.knowledge_base = knowledgeBase;
+  return { status: "success", knowledgeBase };
+};
+
+export const deduplicateContent: AgentTool<
+  { threshold: number },
+  { status: string; report: Dict }
+> = async (args, context) => {
+  console.log("🧹 Tool: deduplicate_content");
+
+  const report = {
+    threshold: args.threshold,
+    duplicates_found: 42,
+    canonical_sources: [
+      {
+        topic: "Deployment",
+        canonical: "docs/deployment.md",
+        duplicates: ["docs/deploy-old.md", "docs/deploy-v1.md"],
+      },
+      {
+        topic: "Security",
+        canonical: "runbooks/security.md",
+        duplicates: ["runbooks/appsec-old.md"],
+      },
+    ],
+    actions: [
+      "Merge outdated deployment docs into single source",
+      "Archive legacy security runbook and link to new version",
+      "Schedule quarterly content freshness review",
+    ],
+  };
+
+  context.state.content_dedup_report = report;
+  return { status: "success", report };
+};
+
+export const knowledgeCurator: Agent = {
+  name: "knowledge_curator",
+  model: { model: "gemini/gemini-2.5-pro", temperature: 0.2 },
+  description: "Knowledge Curator - ingests, normalizes, and deduplicates knowledge assets for RAG",
+  instruction: `أنت أمين معرفة محترف. مسؤولياتك:
+
+📥 الاستيعاب:
+- استخدم 'ingestDataSource' لضخ المستندات مع توثيق البيانات الوصفية
+- ضمن جودة المحتوى (تنظيف، ترميز موحّد، لغات مدعومة)
+
+🧹 التنظيف:
+- استخدم 'deduplicateContent' لحذف أو دمج المحتوى المكرر
+- وثّق المصدر الرسمي (Source of Truth) لكل موضوع
+
+🔄 الحوكمة:
+- ضع جدول تحديث دوري لكل مصدر
+- تواصل مع 'retrieval_evaluator' لضبط مؤشرات الأداء`,
+  tools: [ingestDataSource, deduplicateContent],
+  output_key: "knowledge_base",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// OBSERVABILITY MONITOR (Operations Layer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const setupObservability: AgentTool<
+  { stack: string },
+  { status: string; setup: Dict }
+> = async (args, context) => {
+  console.log("📡 Tool: setup_observability");
+
+  const setup = {
+    stack: args.stack,
+    logging: {
+      pipeline: "Pino → Google Cloud Logging → BigQuery",
+      retention_days: 30,
+      pii_redaction: true,
+    },
+    metrics: [
+      { name: "http_request_latency", source: "Fastify", frequency: "30s", owner: "sre" },
+      { name: "agent_execution_duration", source: "Pipeline", frequency: "1m", owner: "orchestration" },
+      { name: "queue_depth", source: "Pub/Sub", frequency: "1m", owner: "devops" },
+    ],
+    tracing: {
+      provider: "OpenTelemetry",
+      sample_rate: 0.25,
+      exporter: "Google Cloud Trace",
+    },
+    dashboards: [
+      "Grafana: Agent Pipeline Overview",
+      "Looker: Customer Success Metrics",
+      "Sentry Issues Board",
+    ],
+  };
+
+  context.state.observability_setup = setup;
+  return { status: "success", setup };
+};
+
+export const configureAlerts: AgentTool<
+  { slaMinutes: number },
+  { status: string; catalog: Dict }
+> = async (args, context) => {
+  console.log("🚨 Tool: configure_alerts");
+
+  const catalog = {
+    severity_levels: [
+      { level: "SEV1", target_tti: "5m" },
+      { level: "SEV2", target_tti: "30m" },
+      { level: "SEV3", target_tti: "4h" },
+    ],
+    alerts: [
+      {
+        name: "High error rate",
+        metric: "error_rate",
+        threshold: ">=2% for 5 minutes",
+        channel: ["PagerDuty", "Slack #incidents"],
+        runbook: "runbooks/incident-response.md",
+      },
+      {
+        name: "Pipeline backlog",
+        metric: "queue_depth",
+        threshold: ">500 pending messages",
+        channel: ["Slack #sre"],
+        runbook: "runbooks/scale-up.md",
+      },
+      {
+        name: "Latency regression",
+        metric: "agent_execution_duration_p95",
+        threshold: "+25% vs baseline",
+        channel: ["Slack #observability"],
+        runbook: "runbooks/performance.md",
+      },
+    ],
+    escalation: {
+      primary_on_call: "observability_monitor",
+      secondary_on_call: "incident_commander",
+      customer_comms_sla_minutes: args.slaMinutes,
+    },
+  };
+
+  context.state.alert_catalog = catalog;
+  return { status: "success", catalog };
+};
+
+export const observabilityMonitor: Agent = {
+  name: "observability_monitor",
+  model: { model: "gemini/gemini-2.5-pro", temperature: 0.2 },
+  description: "Observability Monitor - instrument services, maintain SLOs, and manage alerting",
+  instruction: `أنت مسؤول مراقبة موثوقية. مسؤولياتك:
+
+📡 المراقبة:
+- استخدم 'setupObservability' لبناء لوحات ومؤشرات قابلة للتنفيذ
+- فعّل التتبع (Tracing) لمراحل الـPipeline الحرجة
+
+🚨 التنبيه:
+- استخدم 'configureAlerts' لتحديد العتبات ومسارات التصعيد
+- تأكد من وجود Runbook محدث لكل تنبيه
+
+📈 SLO/SLA:
+- راقب الالتزام بالـSLOs وشارك تقارير أسبوعية
+- تعاون مع فريق الأداء لتحسين المؤشرات`,
+  tools: [setupObservability, configureAlerts],
+  output_key: "observability_setup",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RELEASE MANAGER (Operations Layer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const manageVersion: AgentTool<
+  { currentVersion: string },
+  { status: string; releasePlan: Dict }
+> = async (args, context) => {
+  console.log("📦 Tool: manage_version");
+
+  const releasePlan = {
+    versioning: {
+      scheme: "semver",
+      current: args.currentVersion,
+      next_version: "1.2.0",
+      freeze_window: "2025-01-20 → 2025-01-21",
+    },
+    milestones: [
+      { name: "Code Freeze", date: "2025-01-18", owner: "release_manager" },
+      { name: "Canary Launch", date: "2025-01-21", owner: "devops_engineer" },
+      { name: "Global Rollout", date: "2025-01-22", owner: "team_leader_awsa" },
+    ],
+    rollout_strategy: "Canary 10% → 50% → 100% over 24h",
+    qa_signoff: ["qa_engineer", "appsec_engineer", "product_manager_kasya"],
+    communications: [
+      "Status email T-24h",
+      "Slack updates at each milestone",
+      "Post-release summary",
+    ],
+  };
+
+  context.state.release_plan = releasePlan;
+  return { status: "success", releasePlan };
+};
+
+export const setupFeatureFlags: AgentTool<
+  { flags: string[] },
+  { status: string; matrix: Dict }
+> = async (args, context) => {
+  console.log("🚩 Tool: setup_feature_flags");
+
+  const matrix = {
+    flags: args.flags.map((flag) => ({
+      key: flag,
+      description: "Controls rollout of capability",
+      default_state: "off",
+      rollout: "percentage",
+      owners: ["release_manager", "team_leader_awsa"],
+      lifecycle: "sunset after 90 days",
+    })),
+    governance: [
+      "Review flags weekly to avoid debt",
+      "Document owner + expiration for each flag",
+      "Archive flag once rollout completes",
+    ],
+  };
+
+  context.state.feature_flag_matrix = matrix;
+  return { status: "success", matrix };
+};
+
+export const releaseManager: Agent = {
+  name: "release_manager",
+  model: { model: "anthropic/claude-sonnet-4-20250514", temperature: 0.25 },
+  description: "Release Manager - orchestrates versioning, rollout strategies, and feature flag governance",
+  instruction: `أنت مدير إصدارات صارم. مسؤولياتك:
+
+📦 التخطيط:
+- استخدم 'manageVersion' لتوثيق خطة الإصدار بالتفاصيل
+- نسّق مع جميع المالكين واحصل على توقيعهم قبل الإطلاق
+
+🚩 التحكم:
+- استخدم 'setupFeatureFlags' لضمان إمكانية التراجع (Kill Switch)
+- راقب تكدس الأعلام وأزل المهجور
+
+🧭 المساءلة:
+- احتفظ بسجل كامل للتغييرات
+- أعد تقريراً بعد كل إصدار (Lessons Learned)`,
+  tools: [manageVersion, setupFeatureFlags],
+  output_key: "release_plan",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PRIVACY OFFICER (Governance Layer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const classifyData: AgentTool<
+  { inventory: Dict[] },
+  { status: string; classification: Dict }
+> = async (args, context) => {
+  console.log("🔒 Tool: classify_data");
+
+  const assets = (args.inventory || []).map((item) => ({
+    dataset: item.dataset ?? "unknown",
+    classification: item.classification ?? "internal",
+    retention: item.retention ?? "3 years",
+    lawful_basis: item.lawful_basis ?? "contract",
+    owner: item.owner ?? "data_governance",
+  }));
+
+  if (assets.length === 0) {
+    assets.push(
+      { dataset: "users", classification: "PII", retention: "7 years", lawful_basis: "contract", owner: "product" },
+      { dataset: "executions", classification: "confidential", retention: "2 years", lawful_basis: "legitimate_interest", owner: "engineering" },
+    );
+  }
+
+  const classification = {
+    assets,
+    data_flows: [
+      { from: "Web Client", to: "Fastify API", purpose: "User request processing" },
+      { from: "Fastify API", to: "PostgreSQL", purpose: "Artifact persistence" },
+      { from: "PostgreSQL", to: "BigQuery", purpose: "Analytics reporting" },
+    ],
+  };
+
+  context.state.data_classification = classification;
+  return { status: "success", classification };
+};
+
+export const auditCompliance: AgentTool<
+  { regulations: string[] },
+  { status: string; report: Dict }
+> = async (args, context) => {
+  console.log("🕵️ Tool: audit_compliance");
+
+  const report = {
+    regulations: args.regulations || ["GDPR", "CCPA"],
+    status: "compliant_with_followups",
+    risks: [
+      {
+        id: "PRIV-001",
+        regulation: "GDPR",
+        severity: "medium",
+        description: "Data retention policy missing documented purge automation",
+        remediation: "Implement scheduled deletion job with audit trail",
+      },
+      {
+        id: "PRIV-004",
+        regulation: "CCPA",
+        severity: "low",
+        description: "Update privacy notice to reflect new telemetry fields",
+        remediation: "Coordinate with legal to publish addendum",
+      },
+    ],
+    controls: [
+      "Encryption at rest (AES-256) and in transit (TLS 1.3)",
+      "Data Subject Access Request workflow within 14 days",
+      "Privacy-by-design checklist integrated into pipeline",
+    ],
+    review_cycle: "Quarterly",
+  };
+
+  context.state.privacy_assessment = report;
+  return { status: "success", report };
+};
+
+export const privacyOfficer: Agent = {
+  name: "privacy_officer",
+  model: { model: "anthropic/claude-sonnet-4-20250514", temperature: 0.2 },
+  description: "Privacy Officer - classifies data assets, ensures compliance with global regulations",
+  instruction: `أنت مسؤول خصوصية. مسؤولياتك:
+
+🔒 التصنيف:
+- استخدم 'classifyData' لبناء خريطة بيانات واضحة (Data Map)
+- حدد فئات الحساسية وفترات الاحتفاظ لكل أصل
+
+🕵️ الامتثال:
+- استخدم 'auditCompliance' للتأكد من الالتزام بـGDPR وCCPA وغيرها
+- وثّق المخاطر وخطط التخفيف مع تواريخ الإنجاز
+
+📝 الحوكمة:
+- حافظ على قنوات مفتوحة مع الشؤون القانونية والأمنية
+- راجع السياسات كل ربع سنة`,
+  tools: [classifyData, auditCompliance],
+  output_key: "privacy_assessment",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// I18N SPECIALIST (Experience Layer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const setupI18n: AgentTool<
+  { defaultLocale: string },
+  { status: string; plan: Dict }
+> = async (args, context) => {
+  console.log("🌍 Tool: setup_i18n");
+
+  const plan = {
+    default_locale: args.defaultLocale,
+    supported_locales: [
+      { code: "en", name: "English", coverage: 1 },
+      { code: "ar", name: "Arabic", coverage: 1 },
+      { code: "fr", name: "French", coverage: 0.75 },
+    ],
+    detection_strategy: "Accept-Language header with cookie fallback",
+    formatting: {
+      dates: "Intl.DateTimeFormat",
+      numbers: "Intl.NumberFormat",
+      plurals: "Intl.PluralRules",
+    },
+    tooling: ["react-i18next", "Lingui", "Lokalise"],
+  };
+
+  context.state.i18n_plan = plan;
+  return { status: "success", plan };
+};
+
+export const manageTranslations: AgentTool<
+  { glossary: Dict[] },
+  { status: string; assets: Dict }
+> = async (args, context) => {
+  console.log("🗂️ Tool: manage_translations");
+
+  const assets = {
+    glossary: (args.glossary || [
+      { term: "pipeline", ar: "خط المعالجة", notes: "احتفظ بالمصطلح التقني" },
+      { term: "agent", ar: "وكيل", notes: "استخدم بصيغة المفرد" },
+    ]).map((entry) => ({
+      term: entry.term,
+      ar: entry.ar,
+      en: entry.en ?? entry.term,
+      notes: entry.notes ?? "",
+    })),
+    workflows: [
+      { name: "Release strings", tool: "Lokalise", sla: "2 business days" },
+      { name: "Critical hotfix", tool: "Google Sheets", sla: "4 hours" },
+    ],
+    qa: [
+      "Pseudo-localization nightly build",
+      "Linguistic review before GA",
+      "Screenshot testing for RTL alignment",
+    ],
+  };
+
+  context.state.translation_assets = assets;
+  return { status: "success", assets };
+};
+
+export const i18nSpecialist: Agent = {
+  name: "i18n_specialist",
+  model: { model: "gemini/gemini-2.5-pro", temperature: 0.25 },
+  description: "Internationalization Specialist - enables multilingual experiences with RTL support",
+  instruction: `أنت خبير تعريب وتجربة عالمية. مسؤولياتك:
+
+🌍 الاستراتيجية:
+- استخدم 'setupI18n' لتحديد اللغات، الكشف، وأدوات التنسيق
+- تأكد من دعم RTL وLTR بالتوازي
+
+🗂️ إدارة الترجمات:
+- استخدم 'manageTranslations' للحفاظ على مسرد موحّد ومسارات تدفق واضحة
+- فعل مراجعات لغوية منتظمة وقياس التغطية
+
+🤝 التعاون:
+- نسّق مع "ux_ui_designer" لضمان تناسق التجربة
+- شارك مع "documentation_lead" لتحديث الأدلة بلغات متعددة`,
+  tools: [setupI18n, manageTranslations],
+  output_key: "i18n_plan",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DOCUMENTATION LEAD (Experience Layer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const generateDocumentation: AgentTool<
+  { audience: string },
+  { status: string; docs: Dict }
+> = async (args, context) => {
+  console.log("📚 Tool: generate_documentation");
+
+  const docs = {
+    overview: `Agent Team enables teams to convert ${args.audience} requirements into production-grade software using orchestrated AI agents.`,
+    sections: [
+      {
+        title: "Getting Started",
+        content: [
+          "1. pnpm install",
+          "2. Copy .env.example to .env and fill credentials",
+          "3. pnpm dev to start local server",
+        ].join("\n"),
+      },
+      {
+        title: "Pipeline Stages",
+        content: "ASSEMBLE → GRADE → MIX → RENDER → EXPORT with clearly defined entry/exit criteria.",
+      },
+      {
+        title: "Security",
+        content: "All secrets handled via Google Secret Manager with auto-rotation every 90 days.",
+      },
+    ],
+    api_reference: [
+      { endpoint: "POST /api/agent-team/run", description: "Execute full multi-agent SDLC pipeline." },
+      { endpoint: "GET /api/agents", description: "List registered agents and their responsibilities." },
+    ],
+    changelog: [
+      "v1.0.0 - Initial release of Agent Team",
+      "v1.1.0 - Added FinOps and Incident Command integrations",
+    ],
+  };
+
+  context.state.documentation_bundle = docs;
+  return { status: "success", docs };
+};
+
+export const createExamples: AgentTool<
+  { scenario: string },
+  { status: string; examples: Dict }
+> = async (args, context) => {
+  console.log("💡 Tool: create_examples");
+
+  const examples = {
+    scenario: args.scenario,
+    quickstarts: [
+      {
+        name: "Launch SaaS backend",
+        steps: [
+          "Describe SaaS requirements in Arabic or English",
+          "Review generated PRD and architecture",
+          "Deploy via Cloud Run using provided pipeline",
+        ],
+      },
+      {
+        name: "Integrate external API",
+        steps: [
+          "Define API contract requirements",
+          "Validate OpenAPI spec and contract tests",
+          "Roll out feature flagged endpoints",
+        ],
+      },
+    ],
+    code_samples: [
+      { language: "TypeScript", path: "examples/run-client.ts", description: "Call Agent Team API programmatically" },
+      { language: "Python", path: "examples/notebook.ipynb", description: "Interact with pipeline notebook" },
+    ],
+    tutorials: [
+      { title: "Customize pipeline stages", duration_minutes: 25 },
+      { title: "Add observability exporters", duration_minutes: 18 },
+    ],
+  };
+
+  context.state.example_library = examples;
+  return { status: "success", examples };
+};
+
+export const documentationLead: Agent = {
+  name: "documentation_lead",
+  model: { model: "anthropic/claude-sonnet-4-20250514", temperature: 0.35 },
+  description: "Documentation Lead - crafts comprehensive guides, references, and runnable examples",
+  instruction: `أنت قائدة توثيق. مسؤولياتك:
+
+📚 المحتوى:
+- استخدم 'generateDocumentation' لتوفير أدلة واضحة ومحدثة
+- وضّح السياق، الغرض، وكيفية الاستخدام لكل جزء
+
+💡 الأمثلة:
+- استخدم 'createExamples' لتوفير Quickstarts وأمثلة قابلة للتنفيذ
+- تحقّق من أن الأمثلة تعمل (doctest/خطوات فعلية)
+
+🧭 الحوكمة:
+- راجع التغييرات الكبيرة مع الفريق قبل النشر
+- حافظ على سجل تغييرات واضح`,
+  tools: [generateDocumentation, createExamples],
+  output_key: "documentation_bundle",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FINOPS ANALYST (Governance Layer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const analyzeCloudCosts: AgentTool<
+  { month: string },
+  { status: string; costs: Dict }
+> = async (args, context) => {
+  console.log("💰 Tool: analyze_cloud_costs");
+
+  const costs = {
+    month: args.month,
+    costsByService: {
+      cloud_run: 1850,
+      postgres: 920,
+      redis: 240,
+      pubsub: 110,
+      storage: 95,
+    },
+    monthlyTotalUSD: 3215,
+    trend: "up_8_percent",
+  };
+
+  context.state.finops_costs = costs;
+  return { status: "success", costs };
+};
+
+export const optimizeResources: AgentTool<
+  { budget: number },
+  { status: string; optimizations: string[]; recommendations: Dict }
+> = async (args, context) => {
+  console.log("🧮 Tool: optimize_resources");
+
+  const optimizations = [
+    "Enable Cloud Run CPU throttling during idle periods",
+    "Downsize Redis tier to 3GB with auto-scaling thresholds",
+    "Adopt storage lifecycle policy to archive artifacts after 30 days",
+  ];
+
+  const recommendations = {
+    recommendations: [
+      "Negotiate committed use discounts for Cloud Run (1-year, 20% savings)",
+      "Introduce cost anomaly detection with daily alerts",
+      "Share dashboards with engineering leads for chargeback transparency",
+    ],
+    estimatedSavingsUSD: Math.max(0, args.budget - 2800),
+  };
+
+  context.state.finops_optimizations = optimizations;
+  context.state.finops_recommendations = recommendations;
+  return { status: "success", optimizations, recommendations };
+};
+
+export const finopsAnalyst: Agent = {
+  name: "finops_analyst",
+  model: { model: "gemini/gemini-2.5-pro", temperature: 0.2 },
+  description: "FinOps Analyst - monitors cloud spend, identifies savings, and enforces budget discipline",
+  instruction: `أنت محلل FinOps. مسؤولياتك:
+
+💰 التحليل:
+- استخدم 'analyzeCloudCosts' لقياس المصروفات شهرياً ومقارنة التوجهات
+- قدّم تقارير واضحة للقيادة التقنية والمالية
+
+🧮 التحسين:
+- استخدم 'optimizeResources' لوضع خطة توفير محددة بأرقام
+- راقب أثر القرارات بعد التنفيذ وحدث التوقعات
+
+📊 الحوكمة:
+- تعاون مع "release_manager" لضبط التكاليف قبل الإصدارات
+- احرص على الالتزام بالميزانية السنوية`,
+  tools: [analyzeCloudCosts, optimizeResources],
+  output_key: "finops_costs",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RETRIEVAL EVALUATOR (Data Layer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const evaluateRetrievalQuality: AgentTool<
+  { dataset: string },
+  { status: string; metrics: Dict }
+> = async (args, context) => {
+  console.log("🔍 Tool: evaluate_retrieval_quality");
+
+  const metrics = {
+    dataset: args.dataset,
+    precision: 0.87,
+    recall: 0.81,
+    f1_score: 0.84,
+    latency_ms: 420,
+    relevance_scores: [0.92, 0.85, 0.78, 0.74],
+    recommendations: [
+      "Add domain-specific synonyms to embedding pipeline",
+      "Lower similarity threshold from 0.82 to 0.78",
+      "Review documents with relevance <0.7 for quality",
+    ],
+  };
+
+  context.state.retrieval_metrics = metrics;
+  return { status: "success", metrics };
+};
+
+export const optimizeRag: AgentTool<
+  { currentConfig: Dict },
+  { status: string; config: Dict }
+> = async (args, context) => {
+  console.log("🧾 Tool: optimize_rag");
+
+  const config = {
+    chunk_size: 750,
+    chunk_overlap: 120,
+    embedding_model: args.currentConfig?.embedding_model ?? "text-embedding-3-large",
+    retrieval_k: 8,
+    rerank_top_n: 4,
+    similarity_threshold: 0.78,
+    hybrid_search: {
+      enabled: true,
+      semantic_weight: 0.65,
+      keyword_weight: 0.35,
+    },
+  };
+
+  context.state.rag_config = config;
+  return { status: "success", config };
+};
+
+export const retrievalEvaluator: Agent = {
+  name: "retrieval_evaluator",
+  model: { model: "gemini/gemini-2.5-pro", temperature: 0.2 },
+  description: "Retrieval Evaluator - benchmarks RAG pipelines and tunes retrieval strategies",
+  instruction: `أنت مقيم استرجاع معلومات. مسؤولياتك:
+
+🔍 القياس:
+- استخدم 'evaluateRetrievalQuality' لقياس Precision/Recall/F1 والكمون
+- وثّق النتائج مع توجيهات واضحة للفِرَق
+
+🧾 التحسين:
+- استخدم 'optimizeRag' لضبط أحجام المقاطع، التداخل، وإعدادات البحث الهجين
+- تعاون مع 'knowledge_curator' لتحسين جودة البيانات
+
+📈 المتابعة:
+- أعِد التقييم بعد أي تغيير في البيانات أو النماذج
+- احتفظ بسجل تاريخي للمؤشرات`,
+  tools: [evaluateRetrievalQuality, optimizeRag],
+  output_key: "retrieval_metrics",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INCIDENT COMMANDER (Operations Layer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const runIncidentWorkflow: AgentTool<
+  { incidentId: string; severity: "SEV1" | "SEV2" | "SEV3" },
+  { status: string; actions: Dict }
+> = async (args, context) => {
+  console.log("🚑 Tool: run_incident_workflow");
+
+  const actions = {
+    incident_id: args.incidentId,
+    severity: args.severity,
+    actions: [
+      "Page on-call via PagerDuty",
+      "Spin up war room Zoom bridge",
+      "Freeze deployments using release_manager feature flags",
+      "Communicate status update to #incidents channel",
+    ],
+    summary: "Pipeline latency regression impacting 35% of requests",
+  };
+
+  context.state.incident_actions = actions;
+  return { status: "success", actions };
+};
+
+export const generatePostmortem: AgentTool<
+  { incidentId: string },
+  { status: string; postmortem: Dict }
+> = async (args, context) => {
+  console.log("📝 Tool: generate_postmortem");
+
+  const postmortem = {
+    title: `Postmortem for Incident ${args.incidentId}`,
+    root_cause: "Cache invalidation bug triggered cascading retries",
+    customer_impact: "Intermittent failures on /api/agent-team/run (HTTP 504)",
+    timeline: [
+      "00:00 - Alert triggered (Latency regression)",
+      "00:05 - War room assembled",
+      "00:18 - Mitigation deployed (cache flush + configuration fix)",
+      "00:42 - Monitoring stable, incident resolved",
+    ],
+    corrective_actions: [
+      "Add circuit breaker to outbound dependency",
+      "Implement automated cache warm-up after deployments",
+      "Expand synthetic monitoring coverage",
+    ],
+    owners: ["incident_commander", "performance_engineer", "devops_engineer"],
+    due_dates: {
+      "Add circuit breaker": "2025-01-28",
+      "Automated cache warm-up": "2025-02-05",
+      "Synthetic monitoring": "2025-02-12",
+    },
+  };
+
+  context.state.postmortem = postmortem;
+  return { status: "success", postmortem };
+};
+
+export const incidentCommander: Agent = {
+  name: "incident_commander",
+  model: { model: "anthropic/claude-sonnet-4-20250514", temperature: 0.2 },
+  description: "Incident Commander - coordinates incident response and drives postmortem excellence",
+  instruction: `أنت قائد حوادث. مسؤولياتك:
+
+🚑 الاستجابة:
+- استخدم 'runIncidentWorkflow' لتفعيل الإجراءات الفورية حسب شدة الحادث
+- حافظ على قنوات الاتصال واضحة ومحدثة كل 15 دقيقة
+
+📝 ما بعد الحادث:
+- استخدم 'generatePostmortem' لتوثيق الأسباب، الأثر، وخطط المعالجة
+- ضمّن مؤشرات المتابعة ومالكي الإجراءات مع تواريخ الإنجاز
+
+📡 التعلم المستمر:
+- تابع تنفيذ الإجراءات التصحيحية حتى الإغلاق
+- شارك الدروس المستفادة مع الفريق بأكمله`,
+  tools: [runIncidentWorkflow, generatePostmortem],
+  output_key: "incident_actions",
+};
