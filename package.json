@@ -21,6 +21,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc -p . --noEmit",
+    "typecheck": "tsc -p . --noEmit",
     "smoke": "tsx apps/ops/smoke.ts",
     "clean": "rm -rf dist coverage node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
@@ -40,6 +41,7 @@
     "zod": "^3.23.8"
   },
   "dependencies": {
+    "@agent-team/communication": "workspace:^0.1.0",
     "fastify": "^4.28.1",
     "node-fetch": "^3.3.2"
   },

@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import { buildApp } from "./api.js";
+import { createCommunicationLayer } from "./agents/communication.js";
 
 /**
  * Server configuration from environment variables
@@ -18,6 +19,12 @@ const config = {
  */
 async function start() {
   const app = buildApp();
+  const communication = await createCommunicationLayer();
+  (app as any).communication = communication;
+  app.addHook("onClose", async () => {
+    await communication.shutdown();
+  });
+  app.log.info("Communication layer initialized");
 
   try {
     // Validate configuration

@@ -15,6 +15,8 @@ export default defineConfig({
       "apps/server/src/**/*.spec.ts",
       "apps/server/test/**/*.test.ts",
       "apps/server/test/**/*.spec.ts",
+      "packages/communication/tests/**/*.test.ts",
+      "packages/communication/tests/**/*.spec.ts",
     ],
 
     // Exclude patterns
@@ -34,7 +36,10 @@ export default defineConfig({
 
       // Include all source files
       all: true,
-      include: ["apps/server/src/**/*.ts"],
+      include: [
+        "apps/server/src/**/*.ts",
+        "packages/communication/src/**/*.ts",
+      ],
       exclude: [
         "**/*.test.ts",
         "**/*.spec.ts",
