@@ -33,7 +33,12 @@
     "clean": "rm -rf dist coverage node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
-    "demo:comm": "ts-node examples/comm-demo.ts"
+    "demo:comm": "ts-node examples/comm-demo.ts",
+    "web:dev": "pnpm --filter @agent-team/web dev",
+    "web:build": "pnpm --filter @agent-team/web build",
+    "web:start": "pnpm --filter @agent-team/web start",
+    "web:test": "pnpm --filter @agent-team/web test",
+    "web:e2e": "pnpm --filter @agent-team/web e2e"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",

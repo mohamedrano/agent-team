@@ -1,0 +1,88 @@
+{
+  "app": {
+    "name": "Agent Team",
+    "title": "AI Agent Collaboration Platform",
+    "description": "Build projects with AI agents working together"
+  },
+  "nav": {
+    "home": "Home",
+    "projects": "Projects",
+    "agents": "Agents",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register"
+  },
+  "hero": {
+    "title": "Build with AI Agents",
+    "subtitle": "Transform your ideas into reality with collaborative AI agents",
+    "cta": "Get Started"
+  },
+  "features": {
+    "title": "Features",
+    "collaboration": {
+      "title": "Team Collaboration",
+      "description": "AI agents work together seamlessly"
+    },
+    "realtime": {
+      "title": "Real-time Updates",
+      "description": "Watch your project come to life"
+    },
+    "insights": {
+      "title": "Deep Insights",
+      "description": "Understand every step of the process"
+    }
+  },
+  "projects": {
+    "title": "Projects",
+    "new": "New Project",
+    "empty": "No projects yet",
+    "emptyDescription": "Create your first project to get started",
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
+  },
+  "agents": {
+    "title": "Agents",
+    "status": {
+      "idle": "Idle",
+      "active": "Active",
+      "busy": "Busy",
+      "error": "Error"
+    },
+    "metrics": {
+      "tasksCompleted": "Tasks Completed",
+      "averageTime": "Avg. Time",
+      "successRate": "Success Rate"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign In",
+      "or": "Or continue with"
+    },
+    "register": {
+      "title": "Register",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign Up"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter"
+  }
+}
+
