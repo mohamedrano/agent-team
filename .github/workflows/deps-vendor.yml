@@ -1,0 +1,43 @@
+name: deps-vendor
+on:
+  push:
+    paths: [pnpm-lock.yaml, apps/web/package.json, apps/web/pnpm-lock.yaml]
+  workflow_dispatch:
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    env:
+      COREPACK_ENABLE: 0
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+
+      - uses: pnpm/action-setup@v4
+        with: { version: 9.12.3, run_install: false }
+
+      - name: Prefetch monorepo deps into PNPM store
+        run: pnpm fetch
+
+      - name: Resolve web deps from store (no network preferred)
+        run: pnpm --filter @agent-team/web install --prefer-offline
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @agent-team/web exec playwright install --with-deps
+
+      - name: Pack PNPM store
+        run: |
+          STORE_DIR="$(pnpm store path)"
+          tar -C "$STORE_DIR" -czf pnpm-store.tgz .
+
+      - name: Pack Playwright cache
+        run: |
+          mkdir -p ~/.cache/ms-playwright
+          tar -C ~/.cache -czf ms-playwright.tgz ms-playwright
+
+      - uses: actions/upload-artifact@v4
+        with: { name: pnpm-store, path: pnpm-store.tgz }
+
+      - uses: actions/upload-artifact@v4
+        with: { name: ms-playwright, path: ms-playwright.tgz }

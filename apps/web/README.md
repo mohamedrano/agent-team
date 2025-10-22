@@ -22,18 +22,22 @@ Modern web application built with Next.js 14, Tailwind CSS, and shadcn/ui for th
 
 ### Installation
 
-1. Install dependencies:
+> **Node.js 20 required**: The frontend is tested and built against Node.js 20 in CI. Use the same major version locally to avoid Next.js or Playwright mismatches.
+
+1. Refresh the offline artifacts when dependencies change by running the `deps-vendor` workflow (either via push to `pnpm-lock.yaml` or through the workflow dispatch UI). Download the generated `pnpm-store` and `ms-playwright` artifacts and place them in a directory such as `./vendor-artifacts`.
+
+2. Install dependencies and provision cached browsers completely offline:
 ```bash
-pnpm install
+bash scripts/web-offline.sh ./vendor-artifacts
 ```
 
-2. Set up environment variables:
+3. Set up environment variables:
 ```bash
 cp .env.local.example .env.local
 # Edit .env.local with your configuration
 ```
 
-3. Run development server:
+4. Run development server:
 ```bash
 pnpm dev
 ```
