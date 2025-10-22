@@ -1,0 +1,4 @@
+registry=https://registry.npmjs.org/
+fetch-retries=5
+prefer-offline=true
+verify-store-integrity=false
