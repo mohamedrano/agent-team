@@ -2,7 +2,7 @@
 ## الدليل التشغيلي للإنتاج
 
 **Last Updated**: 2025-10-21  
-**Version**: 1.0.0  
+**Version**: 0.2.0
 **Owner**: Platform Engineering Team
 
 ---
@@ -17,6 +17,7 @@
 6. [Deployment Procedures](#deployment-procedures)
 7. [Backup & Recovery](#backup--recovery)
 8. [Security Considerations](#security-considerations)
+9. [إصدار 0.2.0](#إصدار-020)
 
 ---
 
@@ -613,6 +614,14 @@ COMM_HMAC_ACTIVE_KEY_ID=key-v2
 
 ---
 
-**Last Updated**: 2025-10-21  
-**Next Review**: 2025-11-21  
+## إصدار 0.2.0
+
+- تغطية الحزم `@agent-team/orchestration` و`@agent-team/ai` تُفرض الآن عند ≥80% عبر إعدادات Vitest، ويتم رفع تقارير HTML كأثر في خطوة `upload coverage` على CI.
+- اختبارات التكامل مع واجهات Gemini الحقيقية مضمّنة لكن معلمة `describe.skip` في خطوط CI؛ شغّلها يدويًا بعد توفير مفاتيح API لتعطيل التخطي إن لزم.
+- سيناريو الـE2E القياسي يعمل على MemoryBus وmocks افتراضية ويستكمل خلال ≤2s، ويمكن تشغيله محليًا عبر `pnpm run ai:demo` (يستخدم mock عند غياب `GEMINI_API_KEY`).
+
+---
+
+**Last Updated**: 2025-10-21
+**Next Review**: 2025-11-21
 **Document Owner**: Platform Engineering Lead

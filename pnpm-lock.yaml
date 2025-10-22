@@ -12,13 +12,13 @@ importers:
   .:
     dependencies:
       '@agent-team/ai':
-        specifier: workspace:^0.1.0
+        specifier: workspace:^0.2.0
         version: link:packages/ai
       '@agent-team/communication':
         specifier: workspace:^0.1.0
         version: link:packages/communication
       '@agent-team/orchestration':
-        specifier: workspace:^0.1.0
+        specifier: workspace:^0.2.0
         version: link:packages/orchestration
       fastify:
         specifier: ^4.28.1
