@@ -1,29 +1,64 @@
 name: ci
-on:
-  push:
-  pull_request:
+on: [push, pull_request]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      COREPACK_ENABLE: 0
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-      - name: bootstrap pnpm
-        run: bash ./scripts/pnpm-bootstrap.sh
-      - name: install
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.3
+          run_install: false
+
+      - name: Configure pnpm store
+        run: |
+          pnpm config set store-dir ~/.pnpm-store
+          pnpm -v
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install
         run: pnpm install --frozen-lockfile
-      - name: build
-        run: pnpm -w run build
-      - name: lint
+
+      - name: Lint
         run: pnpm -w run lint
-      - name: typecheck
+
+      - name: Typecheck
         run: pnpm -w run typecheck
-      - name: test
+
+      - name: Build
+        run: pnpm -w run build
+
+      - name: Tests (unit+pkg)
         run: pnpm run test:ci
-      - name: upload coverage
+
+      - name: E2E (mocked)
+        env:
+          GEMINI_API_KEY: ""
+          CI_SKIP_REAL_GEMINI: "1"
+        run: pnpm -w -r exec vitest --run apps/server/test/e2e/orch-ai-comm.e2e.test.ts
+
+      - name: Upload coverage
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-html

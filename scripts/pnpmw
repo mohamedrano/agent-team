@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if command -v pnpm >/dev/null 2>&1; then
+  exec pnpm "$@"
+fi
+
+echo "[pnpmw] pnpm غير مثبت محليًا. ثبّته يدويًا أو استخدم بائنري مُهرَّب (vendored) تحت vendor/pnpm ثم أضفه إلى PATH." >&2
+exit 127

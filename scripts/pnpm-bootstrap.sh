@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# --- fast-exit if pnpm is already available (CI or local) ---
+if command -v pnpm >/dev/null 2>&1; then
+  echo "[bootstrap] pnpm found: $(pnpm -v). Skipping bootstrap."
+  exit 0
+fi
+
 echo "[bootstrap] trying corepack..."
 if command -v corepack >/dev/null 2>&1; then
   corepack enable || true
@@ -24,7 +30,7 @@ ensure_pnpm() {
     # بدائل ريجستري عند الحجب (اختر المتاح):
     npm config set registry https://registry.npmmirror.com
     if ! npm i -g pnpm@9.12.3; then
-      echo "[bootstrap] failed to install pnpm via npm. please install pnpm@9.12.3 manually."
+      echo "[bootstrap] ERROR: Unable to obtain pnpm due to proxy/403. Install pnpm manually or place a vendored binary, then re-run." >&2
       exit 1
     fi
   fi

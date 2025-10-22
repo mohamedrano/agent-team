@@ -1,5 +1,7 @@
 # 🤖 Agent Team - Multi-Agent Software Development Automation Platform
 
+[![ci](https://github.com/mohamedrano/agent-team/actions/workflows/ci.yml/badge.svg)](https://github.com/mohamedrano/agent-team/actions/workflows/ci.yml)
+
 <div dir="rtl">
 
 ## نظام متعدد الوكلاء لأتمتة دورة حياة تطوير البرمجيات بالكامل
