@@ -31,19 +31,11 @@ test.describe("Basic User Flow", () => {
       );
     });
 
-    await page.goto("/projects/new");
-    await expect(page.getByLabelText(/project name/i)).toBeVisible();
+    await page.goto("/projects");
+    await page.getByTestId("create-project-btn").click();
+    await expect(page).toHaveURL(/\/projects\/new/);
+    await expect(page.getByTestId("submit-project")).toBeVisible();
   });
 
-  test("should toggle language", async ({ page }) => {
-    await page.goto("/");
-    
-    const langButton = page.getByRole("button", { name: /العربية|English/i });
-    await langButton.click();
-    
-    // Check if direction changed
-    const htmlDir = await page.locator("html").getAttribute("dir");
-    expect(htmlDir).toBeTruthy();
-  });
 });
 

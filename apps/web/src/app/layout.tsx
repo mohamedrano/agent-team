@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import LanguageProvider from "@/components/i18n/LanguageProvider";
 import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -19,10 +20,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ErrorBoundary>
-          {children}
-          <Toaster position="top-right" richColors />
-        </ErrorBoundary>
+        <LanguageProvider>
+          <ErrorBoundary>
+            {children}
+            <Toaster position="top-right" richColors />
+          </ErrorBoundary>
+        </LanguageProvider>
       </body>
     </html>
   );

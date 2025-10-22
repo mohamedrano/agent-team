@@ -77,7 +77,7 @@ export function PromptForm({ onSuccess }: PromptFormProps) {
                 placeholder="My Awesome Project"
               />
               {errors.name && (
-                <p className="mt-1 text-sm text-destructive">
+                <p data-testid="error-message" className="mt-1 text-sm text-destructive">
                   {errors.name.message}
                 </p>
               )}
@@ -93,7 +93,7 @@ export function PromptForm({ onSuccess }: PromptFormProps) {
                 placeholder="A brief description of your project"
               />
               {errors.description && (
-                <p className="mt-1 text-sm text-destructive">
+                <p data-testid="error-message" className="mt-1 text-sm text-destructive">
                   {errors.description.message}
                 </p>
               )}
@@ -110,13 +110,18 @@ export function PromptForm({ onSuccess }: PromptFormProps) {
                 placeholder="Describe what you want to build..."
               />
               {errors.prompt && (
-                <p className="mt-1 text-sm text-destructive">
+                <p data-testid="error-message" className="mt-1 text-sm text-destructive">
                   {errors.prompt.message}
                 </p>
               )}
             </div>
 
-            <Button type="submit" disabled={isLoading} className="w-full">
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full"
+              data-testid="submit-project"
+            >
               {isLoading ? "Creating..." : "Create Project"}
             </Button>
           </form>
