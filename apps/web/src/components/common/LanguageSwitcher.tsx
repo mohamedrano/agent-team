@@ -1,34 +1,24 @@
 "use client";
+import i18n from "i18next";
 
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { applyDirection } from "@/lib/rtl";
-
-export function LanguageSwitcher() {
-  const { i18n } = useTranslation();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    if (i18n?.language) {
-      applyDirection(i18n.language);
-    }
-  }, [i18n?.language]);
-
-  const toggleLanguage = () => {
-    const currentLang = i18n?.language || "en";
-    const newLang = currentLang === "en" ? "ar" : "en";
-    i18n?.changeLanguage(newLang);
-    applyDirection(newLang);
-  };
-
-  if (!mounted) return null;
-
+export default function LanguageSwitcher() {
   return (
-    <Button variant="ghost" size="sm" onClick={toggleLanguage}>
-      {(i18n?.language || "en") === "en" ? "العربية" : "English"}
-    </Button>
+    <div data-testid="language-switcher" className="flex items-center gap-2">
+      <button
+        data-testid="lang-ar"
+        onClick={() => i18n.changeLanguage("ar")}
+        className="underline"
+      >
+        العربية
+      </button>
+      <span aria-hidden="true">|</span>
+      <button
+        data-testid="lang-en"
+        onClick={() => i18n.changeLanguage("en")}
+        className="underline"
+      >
+        English
+      </button>
+    </div>
   );
 }
-

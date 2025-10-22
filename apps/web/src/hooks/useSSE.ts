@@ -2,6 +2,18 @@
 
 import { useEffect, useState, useCallback } from "react";
 
+export function buildSseUrl(
+  base: string,
+  path: string,
+  qs: Record<string, string | number>
+) {
+  const url = new URL(path, base);
+  Object.entries(qs).forEach(([key, value]) => {
+    url.searchParams.set(key, String(value));
+  });
+  return url.toString();
+}
+
 interface UseSSEOptions {
   enabled?: boolean;
   onMessage?: (data: any) => void;

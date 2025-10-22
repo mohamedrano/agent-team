@@ -14,7 +14,7 @@ export function Hero() {
         together seamlessly
       </p>
       <Link href="/projects/new">
-        <Button size="lg" className="text-lg">
+        <Button size="lg" className="text-lg" data-testid="cta-create-project">
           Get Started
         </Button>
       </Link>

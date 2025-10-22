@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSSE } from "@/hooks/useSSE";
+import { buildSseUrl, useSSE } from "@/hooks/useSSE";
 import type { ExecutionEvent } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 
@@ -15,10 +15,10 @@ export function ExecutionTimeline({ projectId }: ExecutionTimelineProps) {
   const [events, setEvents] = useState<ExecutionEvent[]>([]);
 
   // SSE connection
-  const { data: sseEvents } = useSSE<ExecutionEvent>(
-    useMock ? "" : `${baseUrl}/events?projectId=${projectId}`,
-    { enabled: !useMock }
-  );
+  const sseUrl = buildSseUrl(baseUrl, "/events", { projectId });
+  const { data: sseEvents } = useSSE<ExecutionEvent>(useMock ? "" : sseUrl, {
+    enabled: !useMock,
+  });
 
   // Fallback polling
   useEffect(() => {
@@ -47,7 +47,7 @@ export function ExecutionTimeline({ projectId }: ExecutionTimelineProps) {
 
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(`${baseUrl}/events?projectId=${projectId}`);
+        const response = await fetch(sseUrl);
         if (response.ok) {
           const data = await response.json();
           setEvents(data);
@@ -58,7 +58,7 @@ export function ExecutionTimeline({ projectId }: ExecutionTimelineProps) {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [projectId, baseUrl, useMock]);
+  }, [projectId, baseUrl, useMock, sseUrl]);
 
   // Update events from SSE
   useEffect(() => {

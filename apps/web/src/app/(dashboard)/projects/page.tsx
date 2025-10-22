@@ -27,7 +27,10 @@ export default function ProjectsPage() {
         <main className="container py-8">
           <div className="mb-8 flex items-center justify-between">
             <h1 className="text-3xl font-bold">Projects</h1>
-            <Button onClick={() => router.push("/projects/new")}>
+            <Button
+              onClick={() => router.push("/projects/new")}
+              data-testid="create-project-btn"
+            >
               New Project
             </Button>
           </div>
