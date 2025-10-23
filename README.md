@@ -124,6 +124,40 @@ pnpm dev
 
 The server will start on `http://localhost:8080`
 
+### Offline web build & test / البناء والاختبار أوفلاين لتطبيق الويب
+
+1. على بيئة متصلة بالإنترنت قم بتشغيل سير العمل `deps-vendor` (GitHub Actions → **deps-vendor** → Run workflow) أو استعمل:
+
+   ```bash
+   gh workflow run deps-vendor.yml
+   ```
+
+   بعد اكتماله قم بتنزيل الـ artifacts: `pnpm-store.tgz` و `ms-playwright.tgz`.
+
+2. على البيئة المحجوبة أنشئ مجلدًا محليًا واحفظ الملفات داخله:
+
+   ```bash
+   mkdir -p ./vendor-artifacts
+   mv ~/Downloads/pnpm-store.tgz ./vendor-artifacts/
+   mv ~/Downloads/ms-playwright.tgz ./vendor-artifacts/
+   ```
+
+3. شغّل سكربت الأوفلاين الذي يستعمل هذه الحزم ويقوم بالتثبيت والبناء والاختبارات بالكامل دون أي اتصال خارجي:
+
+   ```bash
+   bash scripts/web-offline.sh ./vendor-artifacts
+   ```
+
+ستعرض السجلات الرسائل التالية لتأكيد نجاح العملية:
+
+```
+[web-offline] Hydrating PNPM store and Playwright cache...
+[web-offline] Running offline install...
+[web-offline] Building web app...
+[web-offline] Running unit tests...
+[web-offline] Running e2e tests...
+```
+
 ---
 
 ## 📁 Project Structure / هيكل المشروع

@@ -1,0 +1,67 @@
+name: deps-vendor
+
+on:
+  workflow_dispatch:
+    inputs:
+      playwright-browsers:
+        description: 'Browsers to download (comma separated, default: chromium)'
+        required: false
+        default: 'chromium'
+
+permissions:
+  contents: read
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    env:
+      COREPACK_ENABLE: 0
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.3
+          run_install: false
+
+      - name: Prepare vendored artifacts
+        env:
+          PLAYWRIGHT_BROWSERS: ${{ github.event.inputs.playwright-browsers || 'chromium' }}
+        run: |
+          set -euo pipefail
+          VENDOR_DIR="$PWD/vendor-artifacts"
+          STORE_DIR="$VENDOR_DIR/pnpm-store"
+          PLAYWRIGHT_DIR="$VENDOR_DIR/ms-playwright"
+
+          rm -rf "$VENDOR_DIR"
+          mkdir -p "$STORE_DIR" "$PLAYWRIGHT_DIR"
+
+          pnpm config set store-dir "$STORE_DIR"
+          pnpm install --frozen-lockfile
+
+          export PLAYWRIGHT_BROWSERS_PATH="$PLAYWRIGHT_DIR"
+          BROWSERS_LIST="${PLAYWRIGHT_BROWSERS//,/ }"
+          pnpm --filter @agent-team/web exec playwright install ${BROWSERS_LIST}
+
+          tar -czf pnpm-store.tgz -C "$STORE_DIR" .
+          tar -czf ms-playwright.tgz -C "$PLAYWRIGHT_DIR" .
+
+      - name: Upload pnpm store artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pnpm-store
+          path: pnpm-store.tgz
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload Playwright cache artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ms-playwright
+          path: ms-playwright.tgz
+          if-no-files-found: error
+          retention-days: 7

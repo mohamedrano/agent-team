@@ -162,6 +162,7 @@ vectors/
 artifacts/
 generated/
 output/
+.offline-cache/
 
 # Agent execution logs
 agent-logs/
