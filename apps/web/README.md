@@ -24,11 +24,62 @@ Modern web application built with Next.js 14, Tailwind CSS, and shadcn/ui for th
 
 > **Node.js 20 required**: The frontend is tested and built against Node.js 20 in CI. Use the same major version locally to avoid Next.js or Playwright mismatches.
 
-1. Refresh the offline artifacts when dependencies change by running the `deps-vendor` workflow (either via push to `pnpm-lock.yaml` or through the workflow dispatch UI). Download the generated `pnpm-store` and `ms-playwright` artifacts and place them in a directory such as `./vendor-artifacts`.
+### Offline bootstrap (air-gapped environments)
 
-2. Install dependencies and provision cached browsers completely offline:
-```bash
-bash scripts/web-offline.sh ./vendor-artifacts
+1. **Generate fresh caches online** – Run the [`deps-vendor`](../../.github/workflows/deps-vendor.yml) workflow from a connected environment:
+
+   ```bash
+   gh workflow run deps-vendor.yml
+   # أو من واجهة GitHub Actions اختر deps-vendor → Run workflow
+   ```
+
+   When the run finishes, download the two artifacts from the workflow details page:
+
+   - `pnpm-store.tgz`
+   - `ms-playwright.tgz`
+
+2. **Stage the artifacts locally** – move the downloads into a directory that will be mounted in the offline environment:
+
+   ```bash
+   mkdir -p ./vendor-artifacts
+   mv ~/Downloads/pnpm-store.tgz ./vendor-artifacts/
+   mv ~/Downloads/ms-playwright.tgz ./vendor-artifacts/
+   ```
+
+3. **Perform the offline install/build/test cycle** – execute the helper script and pass the directory from the previous step:
+
+   ```bash
+   bash scripts/web-offline.sh ./vendor-artifacts
+   ```
+
+   Expected log highlights:
+
+   ```text
+   [web-offline] Hydrating PNPM store and Playwright cache...
+   [web-offline] Running offline install...
+   [web-offline] Building web app...
+   [web-offline] Running tests...
+   ```
+
+4. **Acceptance criteria** – the offline session should finish with the following results:
+
+   | مؤشر | النتيجة المتوقعة |
+   | --- | --- |
+   | التثبيت | Offline بدون أخطاء شبكة |
+   | build | `pnpm web:build` ✅ |
+   | unit tests | `pnpm web:test` ✅ |
+   | e2e | `pnpm web:e2e` ✅ |
+   | استعمال الشبكة | صفر طلبات HTTP إلى npm أو CDN |
+
+If interactive artifact downloads are not allowed, mirror the manual step inside CI by downloading the cached tarballs before invoking the script:
+
+```yaml
+- uses: actions/download-artifact@v4
+  with:
+    name: pnpm-store
+    path: ./vendor-artifacts
+# Repeat for ms-playwright
+- run: bash scripts/web-offline.sh ./vendor-artifacts
 ```
 
 3. Set up environment variables:
