@@ -1,6 +1,11 @@
 name: deps-vendor
 
 on:
+  push:
+    paths:
+      - pnpm-lock.yaml
+      - apps/web/package.json
+      - apps/web/pnpm-lock.yaml
   workflow_dispatch:
     inputs:
       playwright-browsers:
@@ -29,10 +34,9 @@ jobs:
           run_install: false
 
       - name: Prepare vendored artifacts
-        env:
-          PLAYWRIGHT_BROWSERS: ${{ github.event.inputs.playwright-browsers || 'chromium' }}
         run: |
           set -euo pipefail
+
           VENDOR_DIR="$PWD/vendor-artifacts"
           STORE_DIR="$VENDOR_DIR/pnpm-store"
           PLAYWRIGHT_DIR="$VENDOR_DIR/ms-playwright"
@@ -43,8 +47,13 @@ jobs:
           pnpm config set store-dir "$STORE_DIR"
           pnpm install --frozen-lockfile
 
+          BROWSERS_LIST="$(jq -r '.inputs["playwright-browsers"] // ""' "$GITHUB_EVENT_PATH")"
+          if [[ -z "$BROWSERS_LIST" || "$BROWSERS_LIST" == "null" ]]; then
+            BROWSERS_LIST="chromium"
+          fi
+          BROWSERS_LIST="${BROWSERS_LIST//,/ }"
+
           export PLAYWRIGHT_BROWSERS_PATH="$PLAYWRIGHT_DIR"
-          BROWSERS_LIST="${PLAYWRIGHT_BROWSERS//,/ }"
           pnpm --filter @agent-team/web exec playwright install ${BROWSERS_LIST}
 
           tar -czf pnpm-store.tgz -C "$STORE_DIR" .

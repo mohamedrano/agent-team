@@ -3,18 +3,20 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-ARTIFACTS_DIR="${1:-}"
+ARTIFACTS_ARG="${1:-}"
 
 usage() {
   cat <<'USAGE'
-Usage: web-offline.sh <vendor-artifacts-directory>
+Usage: web-offline.sh [vendor-artifacts-directory]
 
 Expect the directory to contain:
   - pnpm-store.tgz
   - ms-playwright.tgz
 
-Run `.github/workflows/deps-vendor.yml` on a machine with internet access,
-download the artifacts, place them in the directory, then invoke this script.
+If no directory is provided, the script looks for ./vendor-artifacts at the
+repository root. Run `.github/workflows/deps-vendor.yml` on a machine with
+internet access, download the artifacts, place them in the directory, then
+invoke this script.
 USAGE
 }
 
@@ -27,14 +29,18 @@ abort() {
   exit 1
 }
 
-if [[ -z "${ARTIFACTS_DIR}" ]]; then
-  usage >&2
-  exit 1
+if [[ -z "${ARTIFACTS_ARG}" ]]; then
+  ARTIFACTS_DIR="${REPO_ROOT}/vendor-artifacts"
+else
+  ARTIFACTS_DIR="${ARTIFACTS_ARG}"
 fi
 
 if [[ ! -d "${ARTIFACTS_DIR}" ]]; then
+  usage >&2
   abort "Artifact directory '${ARTIFACTS_DIR}' does not exist."
 fi
+
+ARTIFACTS_DIR="$(cd "${ARTIFACTS_DIR}" && pwd)"
 
 PNPM_ARCHIVE="${ARTIFACTS_DIR}/pnpm-store.tgz"
 PLAYWRIGHT_ARCHIVE="${ARTIFACTS_DIR}/ms-playwright.tgz"
