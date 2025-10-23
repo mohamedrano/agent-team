@@ -6,7 +6,7 @@ import { useProjectsStore } from "@/stores/projects";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { ExecutionTimeline } from "@/components/timeline/ExecutionTimeline";
-import { LogsViewer } from "@/components/logs/LogsViewer";
+import LogsViewer from "@/components/logs/LogsViewer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
