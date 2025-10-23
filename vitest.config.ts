@@ -3,8 +3,18 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import { defineConfig } from "vitest/config";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const rootDir = fileURLToPath(new URL("./", import.meta.url));
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@agent-team/orchestration": path.resolve(rootDir, "packages/orchestration/src/index.ts"),
+      "@agent-team/communication": path.resolve(rootDir, "packages/communication/src/index.ts"),
+    },
+  },
   test: {
     // Use globals for describe, it, expect, etc.
     globals: true,
