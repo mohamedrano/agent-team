@@ -6,11 +6,21 @@ export class MemoryBus implements MessageBus {
   async publish(msg: MessageEnvelope): Promise<void> {
     const envelope = MessageEnvelopeSchema.parse(msg) as MessageEnvelope;
     const topic = envelope.topic ?? "*";
-    const targets = [
+    const entries = [
       ...(this.subs.get(topic) ?? []),
-      ...(this.subs.get("*") ?? []),
+      ...(topic === "*" ? [] : this.subs.get("*") ?? []),
     ];
-    await Promise.all(targets.map(({h,f}) => (f && !f(envelope)) ? undefined : Promise.resolve(h(envelope))));
+
+    const seen = new Set<Handler>();
+    const tasks: Promise<void>[] = [];
+    for (const { h, f } of entries) {
+      if (f && !f(envelope)) continue;
+      if (seen.has(h)) continue;
+      seen.add(h);
+      tasks.push(Promise.resolve(h(envelope)));
+    }
+
+    await Promise.all(tasks);
   }
   async subscribe(topic: string, handler: Handler, opts?: SubscribeOptions) {
     const list = this.subs.get(topic) ?? [];

@@ -51,6 +51,11 @@ export function buildApp(): FastifyInstance {
     requestIdLogLabel: "reqId",
     disableRequestLogging: false,
     trustProxy: true,
+    ajv: {
+      customOptions: {
+        coerceTypes: false,
+      },
+    },
   });
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -64,6 +69,34 @@ export function buildApp(): FastifyInstance {
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {
+    if ((error as any).code === "FST_ERR_VALIDATION" && Array.isArray((error as any).validation)) {
+      const violation = (error as any).validation[0];
+      let message = error.message;
+      if (violation.keyword === "required") {
+        const missing = violation.params?.missingProperty ?? "field";
+        message = `${missing} is required`;
+      } else if (violation.keyword === "minLength") {
+        const limit = violation.params?.limit ?? 0;
+        if (typeof (request.body as any)?.prompt !== "string") {
+          message = "prompt must be a string";
+        } else {
+          message = `prompt must be at least ${limit} characters`;
+        }
+      } else if (violation.keyword === "type") {
+        const field = violation.instancePath?.replace(/^\//, "") || violation.params?.missingProperty || "prompt";
+        message = `${field} must be a string`;
+      }
+
+      return reply.status(400).send({
+        error: {
+          message,
+          statusCode: 400,
+          reqId: request.id,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+
     request.log.error(
       {
         err: error,
@@ -183,14 +216,15 @@ export function buildApp(): FastifyInstance {
           200: {
             type: "object",
             properties: {
-              result: { type: "object" },
-              snapshot: { type: "object" },
+              result: { type: "object", additionalProperties: true },
+              snapshot: { type: "object", additionalProperties: true },
+              metadata: { type: "object", additionalProperties: true },
             },
           },
           400: {
             type: "object",
             properties: {
-              error: { type: "object" },
+              error: { type: "object", additionalProperties: true },
             },
           },
         },

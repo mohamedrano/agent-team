@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import { MemoryStateStore, StateController } from "../state/store.js";
+import { SCHEMA_REGISTRY, type StateKey } from "../state/schemas.js";
 
 /**
  * Result of a single step execution
@@ -51,10 +52,12 @@ export interface OrchestrationRuntimeOptions {
 export class OrchestrationRuntime {
   private controller: StateController;
   private store: MemoryStateStore;
+  private sessionState: Record<string, any>;
 
   constructor(opts: OrchestrationRuntimeOptions = {}) {
     this.store = opts.store ?? new MemoryStateStore();
     this.controller = new StateController(this.store);
+    this.sessionState = {};
   }
 
   /**
@@ -65,8 +68,9 @@ export class OrchestrationRuntime {
     const stepResults: StepResult[] = [];
 
     try {
-      // Initialize global session state
-      (globalThis as any).__SESSION_STATE__ = {};
+      // Initialize per-run session state and keep legacy global alias for compatibility
+      this.sessionState = {};
+      (globalThis as any).__SESSION_STATE__ = this.sessionState;
 
       // Step 1: Analyze Request (Team Leader)
       stepResults.push(await this.executeStep(
@@ -89,7 +93,7 @@ export class OrchestrationRuntime {
         "design_architecture",
         "architect_amira",
         "designSystemArchitecture",
-        { prd: (globalThis as any).__SESSION_STATE__.prd_document }
+        { prd: this.sessionState.prd_document }
       ));
 
       // Step 4: Design Database Schema (Architect)
@@ -97,7 +101,7 @@ export class OrchestrationRuntime {
         "design_database",
         "architect_amira",
         "designDatabaseSchema",
-        { requirements: (globalThis as any).__SESSION_STATE__.prd_document || {} }
+        { requirements: this.sessionState.prd_document || {} }
       ));
 
       // Step 5: Generate Code (Software Engineer)
@@ -106,8 +110,8 @@ export class OrchestrationRuntime {
         "software_engineer_salwa",
         "generateSourceCode",
         {
-          architecture: (globalThis as any).__SESSION_STATE__.system_architecture,
-          schema: (globalThis as any).__SESSION_STATE__.database_schema
+          architecture: this.sessionState.system_architecture,
+          schema: this.sessionState.database_schema
         }
       ));
 
@@ -132,7 +136,7 @@ export class OrchestrationRuntime {
         "generate_tests",
         "qa_engineer",
         "generateTestSuites",
-        { codebase: (globalThis as any).__SESSION_STATE__.generated_code }
+        { codebase: this.sessionState.generated_code }
       ));
 
       // Step 9: Analyze Coverage (QA)
@@ -148,7 +152,7 @@ export class OrchestrationRuntime {
         "security_audit",
         "appsec_engineer",
         "performSecurityAudit",
-        { codebase: (globalThis as any).__SESSION_STATE__.generated_code }
+        { codebase: this.sessionState.generated_code }
       ));
 
       // Step 11: Configure Security (AppSec)
@@ -231,12 +235,14 @@ export class OrchestrationRuntime {
 
       // Execute the tool
       const context = {
-        state: (globalThis as any).__SESSION_STATE__,
+        state: this.sessionState,
         agent_name: agentName,
         stateController: this.controller
       };
 
       await tool(args, context);
+
+      await this.persistRegisteredState(agentName);
 
       const finishedAt = new Date();
       const elapsedMs = finishedAt.getTime() - startTime;
@@ -275,5 +281,23 @@ export class OrchestrationRuntime {
    */
   get stateController(): StateController {
     return this.controller;
+  }
+
+  private async persistRegisteredState(agentName: string) {
+    for (const [key, value] of Object.entries(this.sessionState)) {
+      if (value === undefined || value === null) {
+        continue;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(SCHEMA_REGISTRY, key)) {
+        try {
+          await this.controller.write(key as StateKey, value, agentName);
+        } catch (error) {
+          console.error(
+            `⚠️ Failed to persist state key '${key}' from agent '${agentName}': ${(error as Error).message}`
+          );
+        }
+      }
+    }
   }
 }
