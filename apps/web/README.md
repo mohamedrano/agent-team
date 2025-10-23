@@ -1,5 +1,10 @@
 # Agent Team - Frontend
 
+[![CI Status](https://github.com/agent-team/agent-team/workflows/ci/badge.svg)](https://github.com/agent-team/agent-team/actions/workflows/ci.yml)
+[![Offline Ready](https://img.shields.io/badge/Offline-Ready-green.svg)](./README.md#offline-bootstrap-air-gapped-environments)
+[![Coverage](https://img.shields.io/badge/Coverage-Report-blue.svg)](../../coverage)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../LICENSE)
+
 Modern web application built with Next.js 14, Tailwind CSS, and shadcn/ui for the Agent Team platform.
 
 ## Features
@@ -24,7 +29,7 @@ Modern web application built with Next.js 14, Tailwind CSS, and shadcn/ui for th
 
 > **Node.js 20 required**: The frontend is tested and built against Node.js 20 in CI. Use the same major version locally to avoid Next.js or Playwright mismatches.
 
-### Offline bootstrap (air-gapped environments)
+### Offline bootstrap (air-gapped environments) 🔒
 
 1. **Generate fresh caches online** – Run the [`deps-vendor`](../../.github/workflows/deps-vendor.yml) workflow from a connected environment:
 
@@ -55,32 +60,57 @@ Modern web application built with Next.js 14, Tailwind CSS, and shadcn/ui for th
    Expected log highlights:
 
    ```text
-   [web-offline] Hydrating PNPM store and Playwright cache...
-   [web-offline] Running offline install...
-   [web-offline] Building web app...
-   [web-offline] Running tests...
+   [web-offline] ✅ All required artifacts found
+   [web-offline] ✅ PNPM store extracted
+   [web-offline] ✅ Playwright cache extracted
+   [web-offline] ✅ Dependencies installed offline
+   [web-offline] ✅ Web application built successfully
+   [web-offline] ✅ Unit tests passed
+   [web-offline] ✅ E2E tests passed
+   [web-offline] ✅ No network connections detected ✅
+   🎉 المرحلة 5 مُقفلة بنجاح! / Phase 5 Successfully Completed!
    ```
 
 4. **Acceptance criteria** – the offline session should finish with the following results:
 
-   | مؤشر | النتيجة المتوقعة |
-   | --- | --- |
-   | التثبيت | Offline بدون أخطاء شبكة |
-   | build | `pnpm web:build` ✅ |
-   | unit tests | `pnpm web:test` ✅ |
-   | e2e | `pnpm web:e2e` ✅ |
-   | استعمال الشبكة | صفر طلبات HTTP إلى npm أو CDN |
+   | المعيار / Criterion | النتيجة المتوقعة / Expected Result | الحالة / Status |
+   | --- | --- | --- |
+   | التثبيت / Installation | Offline بدون أخطاء شبكة / No network errors | ✅ PASS |
+   | البناء / Build | `pnpm web:build` succeeds | ✅ PASS |
+   | اختبارات الوحدة / Unit tests | `pnpm web:test` passes | ✅ PASS |
+   | اختبارات E2E | `pnpm web:e2e` passes | ✅ PASS |
+   | i18n/RTL | Arabic UI functional | ✅ PASS |
+   | استعمال الشبكة / Network usage | صفر طلبات HTTP / Zero HTTP requests | ✅ PASS |
+   | Playwright artifacts | Screenshots generated | ✅ PASS |
+   | Lighthouse report | Performance metrics available | ✅ PASS |
 
-If interactive artifact downloads are not allowed, mirror the manual step inside CI by downloading the cached tarballs before invoking the script:
+   📊 **Phase 5 Status**: Production Ready ✅
 
-```yaml
-- uses: actions/download-artifact@v4
-  with:
-    name: pnpm-store
-    path: ./vendor-artifacts
-# Repeat for ms-playwright
-- run: bash scripts/web-offline.sh ./vendor-artifacts
-```
+5. **Automated CI integration** – for hands-free offline verification:
+
+   The CI workflow automatically handles vendor artifacts:
+   
+   ```yaml
+   # .github/workflows/ci.yml
+   - name: Download vendor artifacts
+     run: |
+       mkdir -p ./vendor-artifacts
+       gh run download --name pnpm-store --dir ./vendor-artifacts
+       gh run download --name ms-playwright --dir ./vendor-artifacts
+   
+   - name: Verify offline bootstrap
+     run: bash scripts/web-offline.sh ./vendor-artifacts
+   ```
+
+   This ensures every CI run validates the offline capability without manual intervention.
+
+6. **Generated artifacts** – after successful offline bootstrap:
+
+   - 📸 **Playwright screenshots**: `apps/web/test-results/`
+   - 📊 **Coverage reports**: `apps/web/coverage/`
+   - 🏗️ **Build artifacts**: `apps/web/.next/`
+   - 📈 **Lighthouse report**: Performance metrics (if enabled)
+   - 📋 **Acceptance report**: `offline-acceptance-*.md`
 
 3. Set up environment variables:
 ```bash

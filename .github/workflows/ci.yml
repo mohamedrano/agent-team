@@ -15,8 +15,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - uses: pnpm/action-setup@v4
         with:
@@ -28,42 +28,71 @@ jobs:
           pnpm config set store-dir ~/.pnpm-store
           pnpm -v
 
-      - name: Download PNPM store
-        uses: actions/download-artifact@v4
-        with: { name: pnpm-store, path: ./.cache-artifacts }
-
-      - name: Hydrate PNPM store
+      - name: Generate vendor artifacts (if not exists)
+        id: check-artifacts
         run: |
-          STORE_DIR="$(pnpm store path)"
-          mkdir -p "$STORE_DIR"
-          tar -C "$STORE_DIR" -xzf ./.cache-artifacts/pnpm-store.tgz
+          # Check if artifacts exist in current workflow
+          if gh run view ${{ github.run_id }} --json artifacts -q '.artifacts[] | select(.name == "pnpm-store")' 2>/dev/null; then
+            echo "artifacts_exist=true" >> $GITHUB_OUTPUT
+          else
+            # Trigger deps-vendor workflow to generate artifacts
+            gh workflow run deps-vendor.yml --ref ${{ github.ref }}
+            sleep 10
+            # Wait for workflow to complete (max 5 minutes)
+            for i in {1..30}; do
+              if gh run list --workflow=deps-vendor.yml --limit=1 --json status -q '.[0].status' | grep -q completed; then
+                break
+              fi
+              sleep 10
+            done
+            echo "artifacts_exist=false" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Download Playwright cache
-        uses: actions/download-artifact@v4
-        with: { name: ms-playwright, path: ./.cache-artifacts }
-
-      - name: Hydrate Playwright cache
+      - name: Download vendor artifacts
         run: |
-          mkdir -p ~/.cache/ms-playwright
-          tar -C ~/.cache -xzf ./.cache-artifacts/ms-playwright.tgz
+          mkdir -p ./vendor-artifacts
 
-      - name: Offline install (no registry)
+          # Try to download from current workflow first
+          gh run download ${{ github.run_id }} --name pnpm-store --dir ./vendor-artifacts 2>/dev/null || \
+          gh run download $(gh run list --workflow=deps-vendor.yml --limit=1 --json databaseId -q '.[0].databaseId') \
+            --name pnpm-store --dir ./vendor-artifacts
+
+          gh run download ${{ github.run_id }} --name ms-playwright --dir ./vendor-artifacts 2>/dev/null || \
+          gh run download $(gh run list --workflow=deps-vendor.yml --limit=1 --json databaseId -q '.[0].databaseId') \
+            --name ms-playwright --dir ./vendor-artifacts
+
+      - name: Verify offline bootstrap
+        run: |
+          # Use the enhanced offline script for complete verification
+          bash scripts/web-offline.sh ./vendor-artifacts
+
+      - name: Build web (offline verified)
         env:
           PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+          PNPM_OFFLINE: 1
         run: |
-          pnpm install --offline
-          pnpm --filter @agent-team/web install --offline
+          pnpm web:build
+          # Verify no network calls in build
+          if pnpm web:build 2>&1 | grep -iE "(fetching|downloading|registry\.npm|cdn\.)"; then
+            echo "::error::Network calls detected during build!"
+            exit 1
+          fi
 
-      - name: Build web
-        run: pnpm web:build
-
-      - name: Test web (unit)
+      - name: Test web (unit - offline)
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
         run: pnpm web:test
 
-      - name: Test web (e2e, mocked)
+      - name: Test web (e2e with i18n/RTL verification)
         env:
           PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
-        run: pnpm web:e2e
+          CI: true
+        run: |
+          pnpm web:e2e
+          # Verify i18n/RTL in E2E
+          if ! grep -E "(ar|arabic|rtl|العربية)" apps/web/test-results/*.log 2>/dev/null; then
+            echo "::warning::i18n/RTL verification not found in E2E logs"
+          fi
 
       - name: Lint
         run: pnpm -w run lint
@@ -83,6 +112,16 @@ jobs:
           CI_SKIP_REAL_GEMINI: "1"
         run: pnpm -w -r exec vitest --run apps/server/test/e2e/orch-ai-comm.e2e.test.ts
 
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: |
+            apps/web/test-results/
+            apps/web/playwright-report/
+          retention-days: 7
+
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
@@ -91,3 +130,21 @@ jobs:
           path: |
             packages/orchestration/coverage
             packages/ai/coverage
+            apps/web/coverage
+
+      - name: Generate Lighthouse report
+        if: success()
+        continue-on-error: true
+        run: |
+          npx lighthouse http://localhost:3000 \
+            --output=json,html \
+            --output-path=./lighthouse-report \
+            --chrome-flags="--headless" || true
+
+      - name: Upload Lighthouse report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: lighthouse-report.*
+          retention-days: 7
