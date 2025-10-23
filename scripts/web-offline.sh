@@ -5,13 +5,32 @@ ARTIFACTS_DIR="${1:-./vendor-artifacts}"
 STORE_DIR="$(pnpm store path)"
 mkdir -p "$STORE_DIR" ~/.cache/ms-playwright
 
-if [[ ! -f "$ARTIFACTS_DIR/pnpm-store.tgz" ]]; then
-  echo "[web-offline] missing pnpm-store.tgz in $ARTIFACTS_DIR" >&2
-  exit 1
-fi
+missing=()
 
-if [[ ! -f "$ARTIFACTS_DIR/ms-playwright.tgz" ]]; then
-  echo "[web-offline] missing ms-playwright.tgz in $ARTIFACTS_DIR" >&2
+[[ -f "$ARTIFACTS_DIR/pnpm-store.tgz" ]] || missing+=("pnpm-store.tgz")
+[[ -f "$ARTIFACTS_DIR/ms-playwright.tgz" ]] || missing+=("ms-playwright.tgz")
+
+if (( ${#missing[@]} > 0 )); then
+  {
+    printf '[web-offline] missing required artifact(s): %s\n' "${missing[*]}"
+    cat <<'EOF'
+[web-offline] Run the deps-vendor workflow on a machine with internet access:
+  gh workflow run deps-vendor.yml
+  # أو من واجهة GitHub Actions اختر deps-vendor → Run workflow
+[web-offline] بعد اكتمال المهمة قم بتحميل الـ artifacts (pnpm-store.tgz و ms-playwright.tgz)
+          وضعها في مجلد مثل ./vendor-artifacts ثم أعد تشغيل السكربت:
+  mkdir -p ./vendor-artifacts
+  mv ~/Downloads/pnpm-store.tgz ./vendor-artifacts/
+  mv ~/Downloads/ms-playwright.tgz ./vendor-artifacts/
+  bash scripts/web-offline.sh ./vendor-artifacts
+[web-offline] داخل CI يمكن تنزيل الـ artifacts آليًا:
+  - uses: actions/download-artifact@v4
+    with:
+      name: pnpm-store
+      path: ./vendor-artifacts
+  # كرر للـ ms-playwright
+EOF
+  } >&2
   exit 1
 fi
 
