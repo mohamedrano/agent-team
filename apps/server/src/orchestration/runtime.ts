@@ -97,7 +97,7 @@ export class OrchestrationRuntime {
         "design_database",
         "architect_amira",
         "designDatabaseSchema",
-        { requirements: {} }
+        { requirements: (globalThis as any).__SESSION_STATE__.prd_document || {} }
       ));
 
       // Step 5: Generate Code (Software Engineer)
