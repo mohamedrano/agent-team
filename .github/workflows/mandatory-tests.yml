@@ -1,0 +1,168 @@
+name: 🚨 Mandatory Test Coverage Enforcement
+
+on:
+  pull_request:
+    branches: [main, develop, staging]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main, develop, staging]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mandatory-coverage-enforcement:
+    name: "🚨 Mandatory Coverage Check"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for comprehensive checks
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile --no-audit --prefer-offline
+
+      - name: 📝 TypeScript Type Check
+        run: pnpm run typecheck
+
+      - name: 🧹 ESLint Check
+        run: pnpm run lint
+
+      - name: 🔍 Scan for Untested Files
+        run: pnpm run enforce:all-files-tested
+
+      - name: 🧪 Run ALL Tests with Coverage
+        run: pnpm run test:coverage -- --run
+
+      - name: 📊 Enforce Mandatory Coverage Thresholds
+        run: pnpm run enforce:coverage
+
+      - name: 📋 Generate Detailed Coverage Report
+        if: always()
+        run: |
+          echo "## 📊 Coverage Report" >> $GITHUB_STEP_SUMMARY
+          pnpm run coverage:summary >> $GITHUB_STEP_SUMMARY
+
+      - name: ⛔ Block Merge if Coverage Insufficient
+        if: failure()
+        run: |
+          echo "::error::🚨 COVERAGE ENFORCEMENT FAILED"
+          echo "::error::Mandatory coverage requirements not met"
+          echo "::error::📊 Minimum thresholds: Lines ≥85%, Functions ≥90%, Branches ≥85%, Statements ≥85%"
+          echo "::error::🔍 Run 'pnpm run enforce:strict' locally to identify issues"
+          exit 1
+
+      - name: 📤 Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: success()
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false  # Don't fail if Codecov upload fails
+          flags: mandatory-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: 📊 Upload Coverage Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports
+          path: |
+            coverage/
+            !coverage/**/*.tmp
+          retention-days: 30
+
+  # Additional validation: Performance and Quality Gates
+  quality-gates:
+    name: "🛡️ Quality Gates"
+    runs-on: ubuntu-latest
+    needs: mandatory-coverage-enforcement
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: ⚡ Test Execution Time Check
+        run: |
+          echo "⏱️  Checking test execution time..."
+          start_time=$(date +%s)
+          pnpm run test:ci > /dev/null 2>&1
+          end_time=$(date +%s)
+          duration=$((end_time - start_time))
+
+          echo "Test execution time: ${duration} seconds"
+
+          if [ $duration -gt 300 ]; then  # 5 minutes max
+            echo "::warning::Tests took too long: ${duration}s (max: 300s)"
+          fi
+
+      - name: 🔍 Flaky Test Detection
+        run: |
+          echo "🎲 Checking for flaky tests..."
+          # Run tests multiple times to detect flakes
+          for i in {1..3}; do
+            echo "Run $i/3..."
+            if ! pnpm run test:ci > /dev/null 2>&1; then
+              echo "::error::Flaky tests detected - tests failed on run $i"
+              exit 1
+            fi
+          done
+          echo "✅ No flaky tests detected"
+
+      - name: 📏 Bundle Size Check (if applicable)
+        run: |
+          echo "📦 Checking bundle size..."
+          # This would check build output size if applicable
+          echo "Bundle size check skipped (no build output to check)"
+
+  # Final approval gate
+  merge-gate:
+    name: "✅ Merge Approval"
+    runs-on: ubuntu-latest
+    needs: [mandatory-coverage-enforcement, quality-gates]
+    if: always()
+
+    steps:
+      - name: 🎉 All Checks Passed
+        if: needs.mandatory-coverage-enforcement.result == 'success' && needs.quality-gates.result == 'success'
+        run: |
+          echo "🎉 ALL MANDATORY CHECKS PASSED"
+          echo "✅ Code is ready for merge"
+          echo ""
+          echo "📊 Coverage requirements: MET"
+          echo "🧪 All tests: PASSING"
+          echo "🔍 No untested files: CONFIRMED"
+          echo "📝 TypeScript: VALID"
+          echo "🧹 Code quality: APPROVED"
+
+      - name: 🚫 Merge Blocked
+        if: needs.mandatory-coverage-enforcement.result == 'failure' || needs.quality-gates.result == 'failure'
+        run: |
+          echo "::error::🚫 MERGE BLOCKED"
+          echo "::error::One or more mandatory checks failed"
+          echo ""
+          if [ "${{ needs.mandatory-coverage-enforcement.result }}" == "failure" ]; then
+            echo "::error::❌ Coverage requirements not met"
+          fi
+          if [ "${{ needs.quality-gates.result }}" == "failure" ]; then
+            echo "::error::❌ Quality gates failed"
+          fi
+          exit 1

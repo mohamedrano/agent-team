@@ -1,0 +1,14 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🚀 Running pre-push validation..."
+
+# Run full CI test suite
+echo "🧪 Running full test suite..."
+pnpm run test:ci
+if [ $? -ne 0 ]; then
+  echo "❌ PUSH REJECTED: Tests failed"
+  exit 1
+fi
+
+echo "✅ All validations passed - proceeding with push"

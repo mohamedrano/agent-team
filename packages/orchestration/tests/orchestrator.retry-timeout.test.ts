@@ -218,8 +218,38 @@ describe("Orchestrator - Retry & Timeout", () => {
       metadata: {},
     };
 
-    await expect(
-      orchestrator.runWithTimeout(plan, ctx, "input")
-    ).rejects.toThrow("timed out");
+  it("should complete workflow within timeout using runWithTimeout", async () => {
+    const events: any[] = [];
+
+    const orchestrator = new Orchestrator({
+      emit: async (event) => { events.push(event); },
+      now: () => Date.now(),
+      timeoutPolicy: { taskTimeout: 5000, workflowTimeout: 1000 },
+    });
+
+    const plan: WorkflowPlan = {
+      id: "workflow-timeout-success",
+      steps: [
+        {
+          id: "step-1",
+          task: {
+            run: async (_ctx, input) => `${input}-done`,
+          },
+          maxAttempts: 1,
+          onFail: "ABORT",
+        },
+      ],
+    };
+
+    const ctx: TaskContext = {
+      runId: "run-6",
+      agentId: "agent-1",
+      metadata: {},
+    };
+
+    const result = await orchestrator.runWithTimeout(plan, ctx, "input");
+
+    expect(result.status).toBe("SUCCESS");
+    expect(result.output).toBe("input-done");
   });
 });

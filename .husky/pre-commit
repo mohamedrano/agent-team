@@ -1,0 +1,31 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 Enforcing mandatory test coverage..."
+
+# Run type checking
+echo "📝 Running TypeScript type check..."
+pnpm run typecheck
+if [ $? -ne 0 ]; then
+  echo "❌ TYPE CHECK FAILED"
+  exit 1
+fi
+
+# Run linting
+echo "🧹 Running ESLint..."
+pnpm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ LINT FAILED"
+  exit 1
+fi
+
+# Run strict coverage enforcement
+echo "🚨 Running MANDATORY coverage enforcement..."
+pnpm run enforce:strict
+if [ $? -ne 0 ]; then
+  echo "❌ COMMIT REJECTED: Coverage thresholds not met"
+  echo "📊 Fix all failing tests and ensure coverage ≥85%"
+  exit 1
+fi
+
+echo "✅ All checks passed - proceeding with commit"

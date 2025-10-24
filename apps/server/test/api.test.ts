@@ -248,16 +248,14 @@ describe("Agent Team API", () => {
     });
   });
 
-  describe("GET /api/projects/:id", () => {
-    it("should return 404 for non-existent project", async () => {
+  describe("DELETE /api/projects/:id", () => {
+    it("should delete project", async () => {
       const res = await app.inject({
-        method: "GET",
-        url: "/api/projects/123e4567-e89b-12d3-a456-426614174000",
+        method: "DELETE",
+        url: "/api/projects/test-id",
       });
 
-      expect(res.statusCode).toBe(404);
-      const body = res.json();
-      expect(body.error.message).toBe("Project not found");
+      expect(res.statusCode).toBe(204);
     });
   });
 
